@@ -59,7 +59,7 @@ cd task-tracker
 3. Source: **Deploy from branch** → `main` → `/ (root)`
 4. Save
 
-Your site will be live at `https://YOUR_USERNAME.github.io/task-tracker/`.
+Your site will be live at `https://gojiyadev.github.io/Task-Tracker/`.
 
 ---
 
