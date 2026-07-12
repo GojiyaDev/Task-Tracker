@@ -536,6 +536,99 @@ footer {
   display: none !important;
 }
 
+/* Dark mode */
+[data-theme="dark"] {
+  --color-bg: #1a1d23;
+  --color-surface: #24272e;
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-primary-light: #1e293b;
+  --color-text-primary: #e5e7eb;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
+  --color-border: #374151;
+  --color-border-light: #2d3139;
+  --color-success: #34d399;
+  --color-success-light: #064e3b;
+  --color-warning: #fbbf24;
+  --color-warning-light: #451a03;
+  --color-danger: #f87171;
+  --color-danger-light: #450a0a;
+  --color-info: #60a5fa;
+  --color-info-light: #1e3a5f;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-md: 0 2px 4px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.3);
+  --shadow-lg: 0 4px 8px rgba(0,0,0,0.2), 0 16px 48px rgba(0,0,0,0.3);
+}
+
+[data-theme="dark"] body { background: var(--color-bg); }
+[data-theme="dark"] .table thead th { background: #2d3139; }
+[data-theme="dark"] .table tbody tr:hover { background: #2d3139; }
+[data-theme="dark"] .table td { color: var(--color-text-secondary); }
+[data-theme="dark"] .table-responsive { background: var(--color-surface); }
+[data-theme="dark"] .btn-outline-secondary { border-color: var(--color-border); color: var(--color-text-secondary); }
+[data-theme="dark"] .btn-outline-secondary:hover { background: #374151; border-color: #4b5563; }
+[data-theme="dark"] .btn-icon:hover { background: #374151; }
+[data-theme="dark"] .page-item.disabled .page-link { background: #374151; color: #6b7280; }
+[data-theme="dark"] .badge.bg-secondary { background: #374151 !important; color: var(--color-text-secondary); }
+[data-theme="dark"] #loadingOverlay { background: rgba(0,0,0,0.7); }
+[data-theme="dark"] .dropdown-item:hover { background: #374151; }
+[data-theme="dark"] .bg-light { background-color: var(--color-surface) !important; }
+[data-theme="dark"] .text-muted { color: var(--color-text-muted) !important; }
+[data-theme="dark"] .form-text { color: var(--color-text-muted) !important; }
+
+/* Bulk action bar */
+#bulkActionBar {
+  transition: opacity 0.2s ease;
+}
+
+#bulkActionBar.d-none { display: none !important; }
+
+#bulkActionBar .form-check-input {
+  cursor: pointer;
+}
+
+.task-checkbox {
+  cursor: pointer;
+}
+
+/* Tags */
+.tag-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 0.1em 0.5em;
+  border-radius: 100px;
+  background: var(--color-border-light);
+  color: var(--color-text-secondary);
+  margin-right: 0.2rem;
+  white-space: nowrap;
+}
+
+.mobile-task-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+/* Print stylesheet */
+@media print {
+  header, footer, #filterBar, #bulkActionBar, #emptyState, #noResultsState,
+  #pagination, .mobile-task-card-actions, .btn-icon, #toastContainer, #loadingOverlay {
+    display: none !important;
+  }
+  #taskGrid { display: block !important; opacity: 1 !important; }
+  .table-responsive { display: block !important; box-shadow: none !important; border-radius: 0 !important; }
+  #mobileTaskList { display: none !important; }
+  .table thead th { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: white; color: black; }
+  .card, .stat-card { box-shadow: none !important; border: 1px solid #ddd !important; }
+  .table td, .table th { border-color: #ddd !important; }
+  .task-checkbox { display: none; }
+  th:first-child, td:first-child { display: none; }
+}
+
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
@@ -543,6 +636,123 @@ footer {
 
 .btn:focus-visible {
   outline-offset: 2px;
+}
+
+/* Due-date warnings */
+.due-overdue { color: var(--color-danger) !important; }
+.due-today { color: var(--color-warning) !important; }
+.due-tomorrow { color: var(--color-primary) !important; }
+
+.overdue-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1em 0.5em;
+  border-radius: 100px;
+  margin-left: 0.35rem;
+  vertical-align: middle;
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.mobile-task-card-header .overdue-badge {
+  font-size: 0.6rem;
+}
+
+/* Mobile task cards */
+#mobileTaskList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.mobile-task-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mobile-task-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.mobile-task-card-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  word-break: break-word;
+  flex: 1;
+}
+
+.mobile-task-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.mobile-task-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mobile-task-card-label {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.mobile-task-card-actions {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: flex-end;
+  border-top: 1px solid var(--color-border-light);
+  padding-top: 0.5rem;
+}
+
+@media (min-width: 576px) {
+  #mobileTaskList { display: none !important; }
+}
+
+@media (max-width: 575.98px) {
+  .table-responsive { display: none; }
+
+  #searchInput {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #filterBar {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  #filterBar select,
+  #filterBar button {
+    width: 100%;
+  }
+
+  header h1 {
+    font-size: 1rem !important;
+  }
+
+  header .container {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+
+  .stat-number {
+    font-size: 1.25rem !important;
+  }
 }
 
 @media (max-width: 767.98px) {

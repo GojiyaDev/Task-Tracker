@@ -36,7 +36,26 @@
   const proceedUpload  = document.getElementById('proceedUploadBtn');
   const clearFiltersFromEmpty = document.getElementById('clearFiltersFromEmpty');
   const paginationList = document.getElementById('paginationList');
+  const mobileTaskList = document.getElementById('mobileTaskList');
+  const prevPageBtn = document.getElementById('prevPageBtn');
+  const nextPageBtn = document.getElementById('nextPageBtn');
+  const pageInfo = document.getElementById('pageInfo');
   const loadingOverlay = document.getElementById('loadingOverlay');
+  const filterTag = document.getElementById('filterTag');
+  const bulkActionBar = document.getElementById('bulkActionBar');
+  const selectedCount = document.getElementById('selectedCount');
+  const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+  const bulkCompleteBtn = document.getElementById('bulkCompleteBtn');
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+  const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+  const selectAllCheckboxHeader = document.getElementById('selectAllCheckboxHeader');
+  const fieldTags = document.getElementById('taskTags');
+
+  const THEME_KEY = 'taskTracker_theme';
+  let selectedIds = new Set();
+  let lastDeleted = null;
+  let undoTimeout = null;
 
   const priorityClass = {
     Low: 'bg-success',
@@ -68,6 +87,16 @@
     return str.replace(/[&<>"']/g, function (m) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' }[m];
     });
+  }
+
+  function getDueDateInfo(task) {
+    if (!task.dueDate || task.status === 'Completed') return { cls: '', label: '' };
+    const today = new Date().toISOString().slice(0, 10);
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    if (task.dueDate < today) return { cls: 'due-overdue', label: 'Overdue' };
+    if (task.dueDate === today) return { cls: 'due-today', label: 'Due Today' };
+    if (task.dueDate === tomorrow) return { cls: 'due-tomorrow', label: 'Due Tomorrow' };
+    return { cls: '', label: '' };
   }
 
   let editId = null;
@@ -118,6 +147,7 @@
       priority: data.priority || 'Medium',
       status: data.status || 'Pending',
       dueDate: data.dueDate || '',
+      tags: data.tags || [],
       createdAt: new Date().toISOString()
     };
     tasks.push(task);
@@ -159,7 +189,8 @@
       search: searchInput.value.trim().toLowerCase(),
       status: filterStatus.value,
       priority: filterPriority.value,
-      sort: sortBy.value
+      sort: sortBy.value,
+      tag: filterTag.value
     };
   }
 
@@ -180,6 +211,10 @@
 
     if (state.priority) {
       result = result.filter(function (t) { return t.priority === state.priority; });
+    }
+
+    if (state.tag) {
+      result = result.filter(function (t) { return t.tags && t.tags.indexOf(state.tag) !== -1; });
     }
 
     if (state.sort) {
@@ -209,6 +244,7 @@
     filterStatus.value = '';
     filterPriority.value = '';
     sortBy.value = '';
+    filterTag.value = '';
   }
 
   function exportToExcel() {
@@ -384,9 +420,16 @@
     reader.readAsArrayBuffer(file);
   }
 
+  function renderTags(tags) {
+    if (!tags || !tags.length) return '';
+    return '<div>' + tags.map(function (t) { return '<span class="tag-badge">' + escapeHtml(t) + '</span>'; }).join('') + '</div>';
+  }
+
   function renderRow(task, i) {
+    const due = getDueDateInfo(task);
     return '<tr>' +
-      '<td><div class="task-name fw-medium">' + escapeHtml(task.name) + '</div></td>' +
+      '<td class="text-center" style="width:40px"><input type="checkbox" class="form-check-input task-checkbox" data-id="' + escapeHtml(task.id) + '"></td>' +
+      '<td><div class="task-name fw-medium ' + due.cls + '">' + escapeHtml(task.name) + (due.label ? '<span class="overdue-badge">' + due.label + '</span>' : '') + '</div>' + renderTags(task.tags) + '</td>' +
       '<td><span class="badge ' + (priorityClass[task.priority] || 'bg-secondary') + '">' + escapeHtml(task.priority) + '</span></td>' +
       '<td><span class="badge ' + (statusClass[task.status] || 'bg-secondary') + '">' + escapeHtml(task.status) + '</span></td>' +
       '<td class="text-nowrap">' + escapeHtml(task.dueDate || '\u2014') + '</td>' +
@@ -402,6 +445,39 @@
         '</button>' +
       '</td>' +
     '</tr>';
+  }
+
+  function renderMobileCard(task) {
+    const due = getDueDateInfo(task);
+    return '<div class="mobile-task-card">' +
+      '<div class="mobile-task-card-header">' +
+        '<input type="checkbox" class="form-check-input task-checkbox me-1" data-id="' + escapeHtml(task.id) + '">' +
+        '<span class="mobile-task-card-name ' + due.cls + '">' + escapeHtml(task.name) + (due.label ? '<span class="overdue-badge">' + due.label + '</span>' : '') + '</span>' +
+        '<span class="badge ' + (priorityClass[task.priority] || 'bg-secondary') + ' flex-shrink-0">' + escapeHtml(task.priority) + '</span>' +
+      '</div>' +
+      '<div class="mobile-task-card-body">' +
+        '<div class="mobile-task-card-row">' +
+          '<span class="mobile-task-card-label">Status</span>' +
+          '<span class="badge ' + (statusClass[task.status] || 'bg-secondary') + '">' + escapeHtml(task.status) + '</span>' +
+        '</div>' +
+        '<div class="mobile-task-card-row">' +
+          '<span class="mobile-task-card-label">Assign Date</span>' +
+          '<span>' + escapeHtml(task.dueDate || '\u2014') + '</span>' +
+        '</div>' +
+        (task.tags && task.tags.length ? '<div class="mobile-task-card-tags">' + task.tags.map(function (t) { return '<span class="tag-badge">' + escapeHtml(t) + '</span>'; }).join('') + '</div>' : '') +
+      '</div>' +
+      '<div class="mobile-task-card-actions">' +
+        '<button class="btn btn-sm btn-icon action-edit" data-id="' + escapeHtml(task.id) + '" title="Edit">' +
+          '<svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10z"/></svg>' +
+        '</button>' +
+        '<button class="btn btn-sm btn-icon action-copy" data-id="' + escapeHtml(task.id) + '" title="Copy">' +
+          '<svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2z"/></svg>' +
+        '</button>' +
+        '<button class="btn btn-sm btn-icon action-delete" data-id="' + escapeHtml(task.id) + '" title="Delete">' +
+          '<svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>' +
+        '</button>' +
+      '</div>' +
+    '</div>';
   }
 
   function updateStats(tasks) {
@@ -445,6 +521,54 @@
     paginationList.innerHTML = html;
   }
 
+  function updateTagFilter(tasks) {
+    const tags = new Set();
+    for (let i = 0; i < tasks.length; i++) {
+      if (tasks[i].tags) {
+        for (let j = 0; j < tasks[i].tags.length; j++) {
+          tags.add(tasks[i].tags[j]);
+        }
+      }
+    }
+    const current = filterTag.value;
+    filterTag.innerHTML = '<option value="">All Tags</option>';
+    const sorted = Array.from(tags).sort();
+    for (let i = 0; i < sorted.length; i++) {
+      filterTag.innerHTML += '<option value="' + escapeHtml(sorted[i]) + '">' + escapeHtml(sorted[i]) + '</option>';
+    }
+    filterTag.value = current;
+  }
+
+  function updateBulkActions() {
+    const count = selectedIds.size;
+    if (count > 0) {
+      bulkActionBar.classList.remove('d-none');
+      selectedCount.textContent = count + ' selected';
+    } else {
+      bulkActionBar.classList.add('d-none');
+    }
+    if (selectAllCheckbox) selectAllCheckbox.checked = false;
+    if (selectAllCheckboxHeader) selectAllCheckboxHeader.checked = false;
+  }
+
+  function setTheme(theme) {
+    if (theme === 'dark') {
+      document.documentElement.dataset.bsTheme = 'dark';
+      document.documentElement.setAttribute('data-theme', 'dark');
+      themeIcon.innerHTML = '<path d="M8 1a7 7 0 0 0 0 14 7 7 0 0 0 0-14z"/>';
+    } else {
+      delete document.documentElement.dataset.bsTheme;
+      document.documentElement.removeAttribute('data-theme');
+      themeIcon.innerHTML = '<path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>';
+    }
+    try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+  }
+
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    setTheme(isDark ? 'light' : 'dark');
+  }
+
   function render(allTasks, filteredTasks) {
     let hasTasks = allTasks.length > 0;
     let hasResults = filteredTasks.length > 0;
@@ -454,11 +578,15 @@
       noResultsState.classList.add('d-none');
       taskGrid.classList.add('d-none');
       filterBar.classList.add('d-none');
+      mobileTaskList.innerHTML = '';
+      selectedIds.clear();
     } else if (!hasResults) {
       emptyState.classList.add('d-none');
       noResultsState.classList.remove('d-none');
       taskGrid.classList.add('d-none');
       filterBar.classList.remove('d-none');
+      mobileTaskList.innerHTML = '';
+      selectedIds.clear();
     } else {
       emptyState.classList.add('d-none');
       noResultsState.classList.add('d-none');
@@ -471,12 +599,25 @@
         taskList.insertAdjacentHTML('beforeend', renderRow(page[i], i));
       }
 
+      mobileTaskList.innerHTML = '';
+      for (let i = 0; i < page.length; i++) {
+        mobileTaskList.insertAdjacentHTML('beforeend', renderMobileCard(page[i]));
+      }
+
       let start = (currentPage - 1) * PAGE_SIZE + 1;
       let end = Math.min(currentPage * PAGE_SIZE, filteredTasks.length);
       tableInfo.textContent = 'Showing ' + start + '\u2013' + end + ' of ' + filteredTasks.length + ' tasks';
+
+      let totalPages = Math.ceil(filteredTasks.length / PAGE_SIZE) || 1;
+      pageInfo.textContent = 'Page ' + currentPage + ' of ' + totalPages;
+      prevPageBtn.disabled = currentPage === 1;
+      nextPageBtn.disabled = currentPage === totalPages;
+
       renderPagination(filteredTasks.length);
     }
 
+    updateTagFilter(allTasks);
+    updateBulkActions();
     updateStats(allTasks);
   }
 
@@ -524,6 +665,54 @@
     el.addEventListener('hidden.bs.toast', function () { el.remove(); });
   }
 
+  function showUndoDeleteToast(taskName) {
+    const el = document.createElement('div');
+    el.className = 'toast align-items-center border-0 text-bg-danger';
+    el.setAttribute('role', 'alert');
+    el.setAttribute('aria-live', 'assertive');
+    el.setAttribute('aria-atomic', 'true');
+
+    const flexDiv = document.createElement('div');
+    flexDiv.className = 'd-flex align-items-center p-2';
+
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'toast-body';
+    bodyDiv.textContent = 'Deleted "' + taskName + '"';
+    flexDiv.appendChild(bodyDiv);
+
+    const undoBtn = document.createElement('button');
+    undoBtn.type = 'button';
+    undoBtn.className = 'btn btn-sm btn-light me-2';
+    undoBtn.textContent = 'Undo';
+    undoBtn.addEventListener('click', function () {
+      if (lastDeleted) {
+        const tasks = loadTasks();
+        tasks.push(lastDeleted);
+        saveTasks(tasks);
+        lastDeleted = null;
+        if (undoTimeout) { clearTimeout(undoTimeout); undoTimeout = null; }
+        toast.hide();
+        currentPage = 1;
+        refresh();
+        showToast('Task restored!', 'success');
+      }
+    });
+    flexDiv.appendChild(undoBtn);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'btn-close btn-close-white me-2 m-auto';
+    closeBtn.setAttribute('data-bs-dismiss', 'toast');
+    flexDiv.appendChild(closeBtn);
+
+    el.appendChild(flexDiv);
+
+    toastContainer.appendChild(el);
+    const toast = new bootstrap.Toast(el, { autohide: true, delay: 5000 });
+    toast.show();
+    el.addEventListener('hidden.bs.toast', function () { el.remove(); });
+  }
+
   function setFormLoading(loading) {
     saveBtn.disabled = loading;
     saveBtn.innerHTML = loading
@@ -547,7 +736,8 @@
       description: fieldDesc.value.trim(),
       priority: fieldPriority.value,
       status: fieldStatus.value,
-      dueDate: fieldDueDate.value
+      dueDate: fieldDueDate.value,
+      tags: fieldTags.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean)
     };
   }
 
@@ -557,6 +747,7 @@
     fieldPriority.value = task.priority || 'Medium';
     fieldStatus.value = task.status || 'Pending';
     fieldDueDate.value = task.dueDate || '';
+    fieldTags.value = (task.tags || []).join(', ');
   }
 
   function validateForm() {
@@ -620,7 +811,7 @@
     handleSave(getFormData());
   });
 
-  taskList.addEventListener('click', function (e) {
+  function handleTaskAction(e) {
     const item = e.target.closest('[class*="action-"]');
     if (!item) return;
     const id = item.dataset.id;
@@ -630,9 +821,16 @@
     }
     if (item.classList.contains('action-delete')) {
       confirmThen('Delete Task', 'Are you sure you want to delete this task?', function () {
+        const tasks = loadTasks();
+        const task = tasks.find(function (t) { return t.id === id; });
+        if (task) {
+          lastDeleted = task;
+          if (undoTimeout) clearTimeout(undoTimeout);
+          undoTimeout = setTimeout(function () { lastDeleted = null; }, 5000);
+        }
         deleteTask(id);
         confirmModal.hide();
-        showToast('Task deleted!', 'danger');
+        showUndoDeleteToast(task ? task.name : 'Task');
         currentPage = 1;
         refresh();
       }, 'danger');
@@ -646,7 +844,10 @@
         refresh();
       }, 'info');
     }
-  });
+  }
+
+  taskList.addEventListener('click', handleTaskAction);
+  mobileTaskList.addEventListener('click', handleTaskAction);
 
   function confirmThen(title, body, action, iconType) {
     iconType = iconType || 'danger';
@@ -691,16 +892,103 @@
     render(all, filtered);
   });
 
+  prevPageBtn.addEventListener('click', function () {
+    if (currentPage > 1) { currentPage--; refresh(); }
+  });
+
+  nextPageBtn.addEventListener('click', function () {
+    let all = loadTasks();
+    let filtered = applyFilters(all);
+    let totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+    if (currentPage < totalPages) { currentPage++; refresh(); }
+  });
+
   let searchTimer;
   searchInput.addEventListener('input', function () { clearTimeout(searchTimer); searchTimer = setTimeout(refresh, 200); });
-  filterStatus.addEventListener('change', refresh);
-  filterPriority.addEventListener('change', refresh);
-  sortBy.addEventListener('change', refresh);
-  clearBtn.addEventListener('click', function () { resetFilters(); currentPage = 1; refresh(); });
+  filterStatus.addEventListener('change', function () { selectedIds.clear(); refresh(); });
+  filterPriority.addEventListener('change', function () { selectedIds.clear(); refresh(); });
+  filterTag.addEventListener('change', function () { selectedIds.clear(); refresh(); });
+  sortBy.addEventListener('change', function () { selectedIds.clear(); refresh(); });
+  clearBtn.addEventListener('click', function () { resetFilters(); selectedIds.clear(); currentPage = 1; refresh(); });
 
   if (clearFiltersFromEmpty) {
-    clearFiltersFromEmpty.addEventListener('click', function () { resetFilters(); currentPage = 1; refresh(); });
+    clearFiltersFromEmpty.addEventListener('click', function () { resetFilters(); selectedIds.clear(); currentPage = 1; refresh(); });
   }
+
+  // Checkbox delegation for bulk selection
+  document.addEventListener('change', function (e) {
+    if (e.target.classList.contains('task-checkbox')) {
+      const id = e.target.dataset.id;
+      if (e.target.checked) { selectedIds.add(id); }
+      else { selectedIds.delete(id); }
+      updateBulkActions();
+    }
+  });
+
+  function syncSelectAll(checked) {
+    document.querySelectorAll('.task-checkbox').forEach(function (cb) { cb.checked = checked; });
+    selectedIds.clear();
+    if (checked) {
+      document.querySelectorAll('.task-checkbox').forEach(function (cb) { selectedIds.add(cb.dataset.id); });
+    }
+    updateBulkActions();
+  }
+
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', function () { syncSelectAll(this.checked); });
+  }
+  if (selectAllCheckboxHeader) {
+    selectAllCheckboxHeader.addEventListener('change', function () {
+      if (selectAllCheckbox) selectAllCheckbox.checked = this.checked;
+      syncSelectAll(this.checked);
+    });
+  }
+
+  // Bulk actions
+  bulkDeleteBtn.addEventListener('click', function () {
+    if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
+    confirmThen('Delete ' + count + ' Task' + (count > 1 ? 's' : ''), 'Delete ' + count + ' selected task' + (count > 1 ? 's' : '') + '?', function () {
+      const tasks = loadTasks().filter(function (t) { return !selectedIds.has(t.id); });
+      saveTasks(tasks);
+      selectedIds.clear();
+      confirmModal.hide();
+      showToast('Deleted ' + count + ' task' + (count > 1 ? 's' : '') + '.', 'danger');
+      currentPage = 1;
+      refresh();
+    }, 'danger');
+  });
+
+  bulkCompleteBtn.addEventListener('click', function () {
+    if (selectedIds.size === 0) return;
+    const tasks = loadTasks();
+    for (let i = 0; i < tasks.length; i++) {
+      if (selectedIds.has(tasks[i].id)) {
+        tasks[i].status = 'Completed';
+      }
+    }
+    saveTasks(tasks);
+    const count = selectedIds.size;
+    selectedIds.clear();
+    showToast('Marked ' + count + ' task' + (count > 1 ? 's' : '') + ' complete.', 'success');
+    refresh();
+  });
+
+  // Theme toggle
+  themeToggle.addEventListener('click', toggleTheme);
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '/' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      searchInput.focus();
+    }
+    if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      resetForm();
+      taskModal.show();
+    }
+  });
 
   const taskModal    = new bootstrap.Modal(modalTask);
   const confirmModal = new bootstrap.Modal(confirmModalEl);
@@ -729,6 +1017,12 @@
   modalTask.addEventListener('shown.bs.modal', function () {
     fieldName.focus();
   });
+
+  // Init dark mode
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === 'dark') setTheme('dark');
+  } catch (e) {}
 
   refresh();
 })();
