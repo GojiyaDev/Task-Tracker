@@ -1,6 +1,6 @@
 # Developer Task Tracker
 
-A lightweight, client-side task management app built with vanilla JavaScript and Bootstrap. All data is stored in your browser's `localStorage` — no server, no sign-up, no backend.
+A modern, lightweight task management application built with **HTML, CSS, JavaScript, and Bootstrap**. The application runs entirely in the browser and stores all task data in **localStorage**, so no backend or database is required.
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
@@ -11,126 +11,109 @@ A lightweight, client-side task management app built with vanilla JavaScript and
 
 ## Features
 
-- **CRUD operations** — Create, read, update, and delete tasks
-- **Duplicate task** — Quick-copy existing tasks
-<<<<<<< HEAD
-- **Search & filter** — By name, status, priority, and tags
-=======
-- **Search & filter** — By name, status, and priority
->>>>>>> df6022a94c8300a034d67e98cd1c6890e8d9c705
-- **Sort** — By task name, assign date, or status
-- **Pagination** — 10 tasks per page
-- **Excel Import/Export** — Download your tasks as `.xlsx` or upload from Excel
-- **Stats row** — See total, in-progress, completed, and pending counts at a glance
-- **Toast notifications** — Smooth feedback for every action
-<<<<<<< HEAD
-- **Mobile responsive** — Works on desktop and mobile with card-based task list on small screens
-- **Due-date warnings** — Overdue (red), due today (orange), and due tomorrow (blue) automatic highlights
-- **Dark mode** — Toggle light/dark theme; preference persisted in `localStorage`
-- **Bulk actions** — Select multiple tasks with checkboxes to delete or mark complete in bulk
-- **Tags** — Free-form labels on tasks; filter the task list by any tag
-- **Undo delete** — Deleted tasks can be restored within 5 seconds via an "Undo" button in the toast
-- **Keyboard shortcuts** — `/` to focus search, `n` to create a new task
-- **Print-friendly** — Clean print layout hides UI chrome; shows all tasks as a flat table
-=======
-- **Mobile responsive** — Works on desktop and mobile
->>>>>>> df6022a94c8300a034d67e98cd1c6890e8d9c705
-- **Zero dependencies** beyond Bootstrap (CDN) and SheetJS (CDN)
+- Create, edit, duplicate, and delete tasks
+- Search tasks instantly
+- Filter by status, priority, and tags
+- Sort tasks by name, status, or assigned date
+- Pagination for improved navigation
+- Bulk actions (delete or mark completed)
+- Excel import and export (.xlsx)
+- Task statistics dashboard
+- Due date indicators (Overdue, Today, Tomorrow)
+- Dark mode with saved preference
+- Toast notifications
+- Undo delete
+- Keyboard shortcuts
+- Fully responsive design
+- Print-friendly layout
 
 ---
 
-## Tech Stack
+## 🛠 Tech Stack
 
-| Technology | Purpose |
-|---|---|
-| HTML5 + CSS3 | Structure and styling |
-<<<<<<< HEAD
-| Vanilla JavaScript | All application logic (~1028 lines) |
-=======
-| Vanilla JavaScript | All application logic (734 lines) |
->>>>>>> df6022a94c8300a034d67e98cd1c6890e8d9c705
-| [Bootstrap 5.3](https://getbootstrap.com/) | UI components, modals, grid |
-| [SheetJS](https://sheetjs.com/) | Excel `.xlsx` read/write |
-| `localStorage` | Client-side data persistence |
-
-No bundlers, no build step, no server required.
+- HTML5
+- CSS3
+- JavaScript (Vanilla)
+- Bootstrap 5
+- SheetJS
+- Browser LocalStorage
 
 ---
 
 ## Getting Started
 
-### Use it directly
-
-Open `index.html` in any modern browser. No installation needed.
-
-### Run locally
+### Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/task-tracker.git
-cd task-tracker
-# Open index.html in your browser
+git clone https://github.com/GojiyaDev/Task-Tracker.git
+cd Task-Tracker
 ```
 
-### Deploy to GitHub Pages
+### Run the Project
 
-1. Push this repo to GitHub
-2. Go to **Settings → Pages**
-3. Source: **Deploy from branch** → `main` → `/ (root)`
-4. Save
+Simply open:
 
-<<<<<<< HEAD
-Your site will be live at `https://YOUR_USERNAME.github.io/task-tracker/`.
-=======
-Your site will be live at `https://gojiyadev.github.io/Task-Tracker/`.
->>>>>>> df6022a94c8300a034d67e98cd1c6890e8d9c705
+```
+index.html
+```
 
----
+in your preferred web browser.
 
-## Excel Format
-
-When importing tasks, your file must have a header row with these columns:
-
-| Column | Required | Notes |
-|---|---|---|
-| **Task Name** | Yes | Main task title |
-| Description | No | Task details |
-| Priority | No | Low, Medium, or High |
-| Status | No | Pending, In Progress, or Completed |
-| Assign Date | No | YYYY-MM-DD format |
-
-Column names are case-insensitive. Extra columns are ignored.
+No installation or build process is required.
 
 ---
 
-<<<<<<< HEAD
-## Keyboard Shortcuts
+## Live Demo
 
-| Key | Action |
-|-----|--------|
-| `/` | Focus the search input |
-| `n` | Open the "Add New Task" modal |
-| `Escape` | Close any open modal (Bootstrap default) |
+Enable GitHub Pages and access the application at:
+
+```
+https://gojiyadev.github.io/Task-Tracker/
+```
 
 ---
 
-=======
->>>>>>> df6022a94c8300a034d67e98cd1c6890e8d9c705
 ## Project Structure
 
 ```
-task-tracker/
-├── index.html       # Main HTML page
+Task-Tracker/
+│
+├── index.html
 ├── css/
-│   └── style.css    # Custom styles
-└── js/
-    └── script.js    # Application logic
+│   └── style.css
+├── js/
+│   └── script.js
+└── README.md
 ```
 
 ---
-<<<<<<< HEAD
 
-## License
+## Excel Import Format
 
-MIT
-=======
->>>>>>> df6022a94c8300a034d67e98cd1c6890e8d9c705
+The Excel file should contain the following columns:
+
+| Column | Required |
+|---------|----------|
+| Task Name | Required |
+| Description | Optional |
+| Priority | Optional |
+| Status | Optional |
+| Assign Date | Optional |
+
+---
+
+## ⌨ Keyboard Shortcuts
+
+| Key | Action |
+|------|--------|
+| `/` | Focus search |
+| `N` | Create a new task |
+| `Esc` | Close modal |
+
+---
+
+## 👨‍💻 Author
+
+**Gojiya Dev**
+
+GitHub: https://github.com/GojiyaDev
