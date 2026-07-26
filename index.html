@@ -100,15 +100,7 @@
         <option value="Medium">Medium</option>
         <option value="High">High</option>
       </select>
-      <select class="form-select form-select-sm" id="sortBy" aria-label="Sort tasks" style="width:auto">
-        <option value="">Default order</option>
-        <option value="name">Task Name</option>
-        <option value="dueDate">Assign Date</option>
-        <option value="status">Status</option>
-      </select>
-      <select class="form-select form-select-sm" id="filterTag" aria-label="Filter by tag" style="width:auto">
-        <option value="">All Tags</option>
-      </select>
+      <input type="date" class="form-control form-control-sm" id="filterDueDate" aria-label="Filter by assign date" style="width:auto">
       <button class="btn btn-outline-secondary btn-sm" id="clearFilters">Clear</button>
     </div>
 
@@ -201,11 +193,6 @@
             <div class="mb-3">
               <label for="taskDesc" class="form-label">Description</label>
               <textarea class="form-control" id="taskDesc" rows="3" placeholder="Enter description" maxlength="500"></textarea>
-            </div>
-            <div class="mb-3">
-              <label for="taskTags" class="form-label">Tags</label>
-              <input type="text" class="form-control" id="taskTags" placeholder="tag1, tag2, tag3" maxlength="200">
-              <div class="form-text">Separate tags with commas.</div>
             </div>
             <div class="row g-3 mb-3">
               <div class="col-md-4">

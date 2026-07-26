@@ -11,7 +11,7 @@
   const searchInput    = document.getElementById('searchInput');
   const filterStatus   = document.getElementById('filterStatus');
   const filterPriority = document.getElementById('filterPriority');
-  const sortBy         = document.getElementById('sortBy');
+  const filterDueDate  = document.getElementById('filterDueDate');
   const clearBtn       = document.getElementById('clearFilters');
   const modalTask      = document.getElementById('taskModal');
   const form           = document.getElementById('taskForm');
@@ -41,7 +41,6 @@
   const nextPageBtn = document.getElementById('nextPageBtn');
   const pageInfo = document.getElementById('pageInfo');
   const loadingOverlay = document.getElementById('loadingOverlay');
-  const filterTag = document.getElementById('filterTag');
   const bulkActionBar = document.getElementById('bulkActionBar');
   const selectedCount = document.getElementById('selectedCount');
   const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
@@ -50,7 +49,6 @@
   const themeIcon = document.getElementById('themeIcon');
   const selectAllCheckbox = document.getElementById('selectAllCheckbox');
   const selectAllCheckboxHeader = document.getElementById('selectAllCheckboxHeader');
-  const fieldTags = document.getElementById('taskTags');
 
   const THEME_KEY = 'taskTracker_theme';
   let selectedIds = new Set();
@@ -147,7 +145,6 @@
       priority: data.priority || 'Medium',
       status: data.status || 'Pending',
       dueDate: data.dueDate || '',
-      tags: data.tags || [],
       createdAt: new Date().toISOString()
     };
     tasks.push(task);
@@ -189,8 +186,7 @@
       search: searchInput.value.trim().toLowerCase(),
       status: filterStatus.value,
       priority: filterPriority.value,
-      sort: sortBy.value,
-      tag: filterTag.value
+      dueDateFilter: filterDueDate.value,
     };
   }
 
@@ -213,27 +209,8 @@
       result = result.filter(function (t) { return t.priority === state.priority; });
     }
 
-    if (state.tag) {
-      result = result.filter(function (t) { return t.tags && t.tags.indexOf(state.tag) !== -1; });
-    }
-
-    if (state.sort) {
-      result = result.slice().sort(function (a, b) {
-        let valA, valB;
-        if (state.sort === 'name') {
-          valA = a.name.toLowerCase();
-          valB = b.name.toLowerCase();
-        } else if (state.sort === 'dueDate') {
-          valA = a.dueDate || '';
-          valB = b.dueDate || '';
-        } else if (state.sort === 'status') {
-          valA = a.status;
-          valB = b.status;
-        }
-        if (valA < valB) return -1;
-        if (valA > valB) return 1;
-        return 0;
-      });
+    if (state.dueDateFilter) {
+      result = result.filter(function (t) { return t.dueDate === state.dueDateFilter; });
     }
 
     return result;
@@ -243,8 +220,7 @@
     searchInput.value = '';
     filterStatus.value = '';
     filterPriority.value = '';
-    sortBy.value = '';
-    filterTag.value = '';
+    filterDueDate.value = '';
   }
 
   function exportToExcel() {
@@ -420,16 +396,11 @@
     reader.readAsArrayBuffer(file);
   }
 
-  function renderTags(tags) {
-    if (!tags || !tags.length) return '';
-    return '<div>' + tags.map(function (t) { return '<span class="tag-badge">' + escapeHtml(t) + '</span>'; }).join('') + '</div>';
-  }
-
   function renderRow(task, i) {
     const due = getDueDateInfo(task);
     return '<tr>' +
       '<td class="text-center" style="width:40px"><input type="checkbox" class="form-check-input task-checkbox" data-id="' + escapeHtml(task.id) + '"></td>' +
-      '<td><div class="task-name fw-medium ' + due.cls + '">' + escapeHtml(task.name) + (due.label ? '<span class="overdue-badge">' + due.label + '</span>' : '') + '</div>' + renderTags(task.tags) + '</td>' +
+      '<td><div class="task-name fw-medium ' + due.cls + '">' + escapeHtml(task.name) + (due.label ? '<span class="overdue-badge">' + due.label + '</span>' : '') + '</div></td>' +
       '<td><span class="badge ' + (priorityClass[task.priority] || 'bg-secondary') + '">' + escapeHtml(task.priority) + '</span></td>' +
       '<td><span class="badge ' + (statusClass[task.status] || 'bg-secondary') + '">' + escapeHtml(task.status) + '</span></td>' +
       '<td class="text-nowrap">' + escapeHtml(task.dueDate || '\u2014') + '</td>' +
@@ -464,7 +435,6 @@
           '<span class="mobile-task-card-label">Assign Date</span>' +
           '<span>' + escapeHtml(task.dueDate || '\u2014') + '</span>' +
         '</div>' +
-        (task.tags && task.tags.length ? '<div class="mobile-task-card-tags">' + task.tags.map(function (t) { return '<span class="tag-badge">' + escapeHtml(t) + '</span>'; }).join('') + '</div>' : '') +
       '</div>' +
       '<div class="mobile-task-card-actions">' +
         '<button class="btn btn-sm btn-icon action-edit" data-id="' + escapeHtml(task.id) + '" title="Edit">' +
@@ -519,24 +489,6 @@
     html += '<li class="page-item' + (currentPage === totalPages ? ' disabled' : '') + '"><a class="page-link" href="#" data-page="next">Next</a></li>';
 
     paginationList.innerHTML = html;
-  }
-
-  function updateTagFilter(tasks) {
-    const tags = new Set();
-    for (let i = 0; i < tasks.length; i++) {
-      if (tasks[i].tags) {
-        for (let j = 0; j < tasks[i].tags.length; j++) {
-          tags.add(tasks[i].tags[j]);
-        }
-      }
-    }
-    const current = filterTag.value;
-    filterTag.innerHTML = '<option value="">All Tags</option>';
-    const sorted = Array.from(tags).sort();
-    for (let i = 0; i < sorted.length; i++) {
-      filterTag.innerHTML += '<option value="' + escapeHtml(sorted[i]) + '">' + escapeHtml(sorted[i]) + '</option>';
-    }
-    filterTag.value = current;
   }
 
   function updateBulkActions() {
@@ -616,7 +568,6 @@
       renderPagination(filteredTasks.length);
     }
 
-    updateTagFilter(allTasks);
     updateBulkActions();
     updateStats(allTasks);
   }
@@ -737,7 +688,6 @@
       priority: fieldPriority.value,
       status: fieldStatus.value,
       dueDate: fieldDueDate.value,
-      tags: fieldTags.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean)
     };
   }
 
@@ -747,7 +697,6 @@
     fieldPriority.value = task.priority || 'Medium';
     fieldStatus.value = task.status || 'Pending';
     fieldDueDate.value = task.dueDate || '';
-    fieldTags.value = (task.tags || []).join(', ');
   }
 
   function validateForm() {
@@ -907,8 +856,7 @@
   searchInput.addEventListener('input', function () { clearTimeout(searchTimer); searchTimer = setTimeout(refresh, 200); });
   filterStatus.addEventListener('change', function () { selectedIds.clear(); refresh(); });
   filterPriority.addEventListener('change', function () { selectedIds.clear(); refresh(); });
-  filterTag.addEventListener('change', function () { selectedIds.clear(); refresh(); });
-  sortBy.addEventListener('change', function () { selectedIds.clear(); refresh(); });
+  filterDueDate.addEventListener('change', function () { selectedIds.clear(); refresh(); });
   clearBtn.addEventListener('click', function () { resetFilters(); selectedIds.clear(); currentPage = 1; refresh(); });
 
   if (clearFiltersFromEmpty) {

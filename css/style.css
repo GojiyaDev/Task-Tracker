@@ -592,25 +592,6 @@ footer {
   cursor: pointer;
 }
 
-/* Tags */
-.tag-badge {
-  display: inline-block;
-  font-size: 0.65rem;
-  font-weight: 500;
-  padding: 0.1em 0.5em;
-  border-radius: 100px;
-  background: var(--color-border-light);
-  color: var(--color-text-secondary);
-  margin-right: 0.2rem;
-  white-space: nowrap;
-}
-
-.mobile-task-card-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem;
-}
-
 /* Print stylesheet */
 @media print {
   header, footer, #filterBar, #bulkActionBar, #emptyState, #noResultsState,
