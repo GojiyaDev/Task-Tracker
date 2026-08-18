@@ -39,10 +39,24 @@
       </div>
 
       <nav class="sidebar-nav" id="sidebarNav">
-        <p class="sidebar-section">Views</p>
+        <p class="sidebar-section">Main Views</p>
         <a href="#" class="nav-item active" data-nav="all" data-bs-dismiss="offcanvas">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
-          <span>Dashboard</span>
+          <span>List View</span>
+        </a>
+        <a href="#" class="nav-item" data-nav="kanban" data-bs-dismiss="offcanvas">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M4 4h4v16H4V4zm6 0h4v10h-4V4zm6 0h4v14h-4V4z"/></svg>
+          <span>Kanban Board</span>
+        </a>
+        <a href="#" class="nav-item" data-nav="analytics" data-bs-dismiss="offcanvas">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zm5.6 8H19v6h-2.8v-6z"/></svg>
+          <span>Analytics</span>
+        </a>
+
+        <p class="sidebar-section mt-3">Status Filters</p>
+        <a href="#" class="nav-item" data-nav="Pending" data-bs-dismiss="offcanvas">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 12h-2v-2h2v2zm0-4h-2V7h2v4z"/></svg>
+          <span>Pending</span>
         </a>
         <a href="#" class="nav-item" data-nav="In Progress" data-bs-dismiss="offcanvas">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M11 2v10.59l3.3-3.3 1.4 1.42L12 16l-6.7-6.7 1.4-1.42L11 12.59V2h2zm-7 16h14v2H4v-2z"/></svg>
@@ -52,42 +66,100 @@
           <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
           <span>Completed</span>
         </a>
-        <a href="#" class="nav-item" data-nav="Pending" data-bs-dismiss="offcanvas">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 12h-2v-2h2v2zm0-4h-2V7h2v4z"/></svg>
-          <span>Pending</span>
+
+        <p class="sidebar-section mt-3">Developer Tools</p>
+        <a href="#" class="nav-item" id="sidebarStandupBtn" data-bs-dismiss="offcanvas">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+          <span>Daily Standup</span>
+        </a>
+        <a href="#" class="nav-item" id="sidebarShortcutsBtn" data-bs-dismiss="offcanvas">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm8 7H9v-2h6v2zm1-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>
+          <span>Shortcuts (<kbd>?</kbd>)</span>
         </a>
       </nav>
 
       <div class="sidebar-footer">
-        <div class="sidebar-foot-note">Task Tracker</div>
+        <div class="sidebar-foot-note">Developer Task Tracker</div>
       </div>
     </aside>
 
-    <!-- Main -->
+    <!-- Main Content Area -->
     <div class="app-main d-flex flex-column flex-grow-1 min-vh-100">
-       <header class="topbar">
-         <div class="topbar-left">
-           <button class="icon-btn d-lg-none me-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="Open navigation">
-             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
-           </button>
-           <h1 class="topbar-title">Dashboard</h1>
-          <p class="topbar-subtitle">Manage and track your development tasks</p>
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-btn d-lg-none me-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="Open navigation">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+          </button>
+          <div>
+            <h1 class="topbar-title" id="pageTitle">Dashboard</h1>
+            <p class="topbar-subtitle" id="pageSubtitle">Manage and track your development tasks</p>
+          </div>
         </div>
+
         <div class="topbar-right">
+          <!-- View Switcher -->
+          <div class="btn-group view-switcher me-2" role="group" aria-label="View switch">
+            <button type="button" class="btn btn-sm btn-outline-secondary active" id="viewListBtn" title="List View (L)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+              <span class="d-none d-md-inline ms-1">List</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="viewBoardBtn" title="Kanban Board (B)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 4h4v16H4V4zm6 0h4v10h-4V4zm6 0h4v14h-4V4z"/></svg>
+              <span class="d-none d-md-inline ms-1">Board</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="viewAnalyticsBtn" title="Analytics View (A)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zm5.6 8H19v6h-2.8v-6z"/></svg>
+              <span class="d-none d-md-inline ms-1">Metrics</span>
+            </button>
+          </div>
+
+          <!-- Focus Timer Widget -->
+          <div class="focus-timer-widget me-2" id="focusTimerWidget" title="Focus / Pomodoro Timer">
+            <span class="timer-icon">⏱️</span>
+            <span class="timer-display" id="timerDisplay">25:00</span>
+            <button class="timer-ctrl-btn" id="timerToggleBtn" aria-label="Start timer" title="Start / Pause">
+              <svg id="timerToggleIcon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            <button class="timer-ctrl-btn" id="timerResetBtn" aria-label="Reset timer" title="Reset">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+            </button>
+          </div>
+
           <div class="topbar-actions">
+            <!-- Command Palette Shortcut Button -->
+            <button class="cmd-palette-btn d-none d-md-inline-flex" id="cmdPaletteBtn" title="Command Palette (Ctrl+K)">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+              <span>Quick Actions</span>
+              <kbd>Ctrl+K</kbd>
+            </button>
+
+            <!-- Data Actions Dropdown -->
             <div class="dropdown">
-              <button class="icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Excel actions" title="Import / Export">
+              <button class="icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Data actions" title="Import / Export / Backup">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 7V3.5L18.5 9H16zM8.5 11.5 11 14l-2.5 2.5V18l3.5-2.5L15.5 18v-1.5L13 14l2.5-2.5V10L11 12.5 8.5 10v1.5z"/></svg>
               </button>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li><button class="dropdown-item" id="exportExcelBtn">Download Excel</button></li>
-                <li><button class="dropdown-item" id="importExcelBtn">Upload Excel</button></li>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li><h6 class="dropdown-header">Excel (.xlsx)</h6></li>
+                <li><button class="dropdown-item" id="exportExcelBtn"><svg class="me-2" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>Download Excel</button></li>
+                <li><button class="dropdown-item" id="importExcelBtn"><svg class="me-2" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>Upload Excel</button></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header">JSON (Full Backup)</h6></li>
+                <li><button class="dropdown-item" id="exportJsonBtn"><svg class="me-2" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>Backup to JSON</button></li>
+                <li><button class="dropdown-item" id="importJsonBtn"><svg class="me-2" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>Restore from JSON</button></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header">Other Formats</h6></li>
+                <li><button class="dropdown-item" id="exportCsvBtn"><svg class="me-2" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 14h-3v3h-2v-3H8v-2h3v-3h2v3h3v2zm-3-7V3.5L18.5 9H13z"/></svg>Export as CSV</button></li>
+                <li><button class="dropdown-item" id="exportMarkdownBtn"><svg class="me-2" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.56 18H3.44C2.65 18 2 17.37 2 16.59V7.41C2 6.63 2.65 6 3.44 6h17.12c.79 0 1.44.63 1.44 1.41v9.18c0 .78-.65 1.41-1.44 1.41zM6.81 15.19v-4.66l2.19 2.2 2.18-2.2v4.66h1.72V8.81h-1.72l-2.18 2.2-2.19-2.2H5.09v6.38h1.72zm11.1 0v-2.19h-1.84v-2h1.84V8.81L21 12l-3.09 3.19z"/></svg>Export Markdown (.md)</button></li>
               </ul>
             </div>
-            <button class="icon-btn" id="themeToggle" aria-label="Toggle dark mode" title="Toggle theme">
+
+            <!-- Theme Toggle -->
+            <button class="icon-btn" id="themeToggle" aria-label="Toggle dark mode" title="Toggle theme (T)">
               <svg id="themeIcon" viewBox="0 0 16 16" width="20" height="20" fill="currentColor"><path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/></svg>
             </button>
-            <button class="btn btn-primary btn-add d-none d-lg-inline-flex" data-bs-toggle="modal" data-bs-target="#taskModal">
+
+            <!-- Add Task Button -->
+            <button class="btn btn-primary btn-add d-none d-lg-inline-flex" data-bs-toggle="modal" data-bs-target="#taskModal" title="Create task (N)">
               <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>
               <span>Add Task</span>
             </button>
@@ -96,57 +168,95 @@
       </header>
 
       <main class="content flex-grow-1">
-        <!-- Stats -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-head">
-              <span class="stat-icon stat-icon-primary">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 16H5V8h14v11z"/></svg>
-              </span>
-              <span class="stat-label">Total Tasks</span>
+        <!-- Stats Cards & Health Meters -->
+        <div class="stats-container">
+          <div class="stats-grid">
+            <div class="stat-card" data-filter-status="">
+              <div class="stat-head">
+                <span class="stat-icon stat-icon-primary">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 16H5V8h14v11z"/></svg>
+                </span>
+                <span class="stat-label">Total Tasks</span>
+              </div>
+              <h3 class="stat-number">0</h3>
             </div>
-            <h3 class="stat-number">0</h3>
+
+            <div class="stat-card" data-filter-status="In Progress">
+              <div class="stat-head">
+                <span class="stat-icon stat-icon-blue">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11 2v10.59l3.3-3.3 1.4 1.42L12 16l-6.7-6.7 1.4-1.42L11 12.59V2h2zm-7 16h14v2H4v-2z"/></svg>
+                </span>
+                <span class="stat-label">In Progress</span>
+              </div>
+              <h3 class="stat-number">0</h3>
+            </div>
+
+            <div class="stat-card" data-filter-status="Completed">
+              <div class="stat-head">
+                <span class="stat-icon stat-icon-green">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                </span>
+                <span class="stat-label">Completed</span>
+              </div>
+              <h3 class="stat-number">0</h3>
+            </div>
+
+            <div class="stat-card" data-filter-status="Pending">
+              <div class="stat-head">
+                <span class="stat-icon stat-icon-slate">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 12h-2v-2h2v2zm0-4h-2V7h2v4z"/></svg>
+                </span>
+                <span class="stat-label">Pending</span>
+              </div>
+              <h3 class="stat-number">0</h3>
+            </div>
           </div>
 
-          <div class="stat-card">
-            <div class="stat-head">
-              <span class="stat-icon stat-icon-blue">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11 2v10.59l3.3-3.3 1.4 1.42L12 16l-6.7-6.7 1.4-1.42L11 12.59V2h2zm-7 16h14v2H4v-2z"/></svg>
-              </span>
-              <span class="stat-label">In Progress</span>
+          <!-- Visual Progress & Health Bar -->
+          <div class="progress-bar-card mb-4" id="progressSummaryCard">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="fw-semibold small">Overall Completion</span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" id="completionRateBadge">0%</span>
+              </div>
+              <div class="d-flex align-items-center gap-3 small text-muted">
+                <span id="overdueCountText" class="text-danger fw-semibold d-none">0 Overdue</span>
+                <span id="totalTimeLoggedText">⏱️ 0m logged</span>
+              </div>
             </div>
-            <h3 class="stat-number">0</h3>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-head">
-              <span class="stat-icon stat-icon-green">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-              </span>
-              <span class="stat-label">Completed</span>
+            <div class="progress progress-stacked-custom">
+              <div class="progress-bar bg-success" role="progressbar" id="progressBarCompleted" style="width: 0%" title="Completed"></div>
+              <div class="progress-bar bg-primary" role="progressbar" id="progressBarInProgress" style="width: 0%" title="In Progress"></div>
+              <div class="progress-bar bg-secondary-subtle text-secondary" role="progressbar" id="progressBarPending" style="width: 0%" title="Pending"></div>
             </div>
-            <h3 class="stat-number">0</h3>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-head">
-              <span class="stat-icon stat-icon-slate">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 12h-2v-2h2v2zm0-4h-2V7h2v4z"/></svg>
-              </span>
-              <span class="stat-label">Pending</span>
-            </div>
-            <h3 class="stat-number">0</h3>
           </div>
         </div>
 
-        <!-- Toolbar -->
+        <!-- Toolbar (Search, Filter, Sort) -->
         <div id="filterBar" class="toolbar">
           <div class="search-box">
             <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
-            <input type="text" class="form-control search-input" placeholder="Search tasks, tags, or descriptions..." aria-label="Search" id="searchInput">
+            <input type="text" class="form-control search-input" placeholder="Search tasks, descriptions, tags... (/)" aria-label="Search" id="searchInput">
           </div>
 
           <div class="filter-controls">
+            <!-- Sort Selector -->
+            <div class="select-wrap">
+              <svg class="select-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 18h6v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z"/></svg>
+              <select class="form-select form-select-sm filter-select" id="sortBySelect" aria-label="Sort tasks">
+                <option value="createdAt-desc">Newest First</option>
+                <option value="createdAt-asc">Oldest First</option>
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+                <option value="priority-desc">Priority (High-Low)</option>
+                <option value="priority-asc">Priority (Low-High)</option>
+                <option value="dueDate-asc">Due Date (Earliest)</option>
+                <option value="dueDate-desc">Due Date (Latest)</option>
+                <option value="status-asc">Status</option>
+              </select>
+            </div>
+
+            <!-- Status Filter -->
             <div class="select-wrap">
               <svg class="select-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 5h18v2H3zm4 6h10v2H7zm2 6h6v2H9z"/></svg>
               <select class="form-select form-select-sm filter-select" id="filterStatus" aria-label="Filter by status">
@@ -156,6 +266,8 @@
                 <option value="Completed">Completed</option>
               </select>
             </div>
+
+            <!-- Priority Filter -->
             <div class="select-wrap">
               <svg class="select-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 14h4v6H4zm0-10h4v6H4zm8 5h4v11h-4zm0-5h4v4h-4z"/></svg>
               <select class="form-select form-select-sm filter-select" id="filterPriority" aria-label="Filter by priority">
@@ -165,30 +277,34 @@
                 <option value="High">High</option>
               </select>
             </div>
+
+            <!-- Due Date Filter -->
             <div class="select-wrap">
               <svg class="select-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14v11z"/></svg>
               <input type="date" class="form-control form-control-sm filter-date" id="filterDueDate" aria-label="Filter by assign date">
             </div>
-            <button class="btn btn-clear" id="clearFilters">
+
+            <button class="btn btn-clear" id="clearFilters" title="Clear all active filters">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
               Clear
             </button>
           </div>
         </div>
 
-        <!-- Active filter chips -->
+        <!-- Active Filter Chips -->
         <div id="activeFilters" class="active-filters d-none"></div>
 
-        <!-- Tag filter chips -->
+        <!-- Tag Filter Chips -->
         <div id="tagFilter" class="tag-filter-row"></div>
 
-        <!-- Bulk action bar -->
+        <!-- Bulk Action Bar -->
         <div id="bulkActionBar" class="bulk-bar d-none">
           <div class="d-flex align-items-center gap-3 flex-wrap">
             <input type="checkbox" class="form-check-input" id="selectAllCheckbox" title="Select all">
             <small class="bulk-count" id="selectedCount">0 selected</small>
             <button class="btn btn-sm btn-outline-danger" id="bulkDeleteBtn">Delete Selected</button>
             <button class="btn btn-sm btn-outline-success" id="bulkCompleteBtn">Mark Complete</button>
+            <button class="btn btn-sm btn-outline-primary" id="bulkInProgressBtn">Mark In Progress</button>
           </div>
         </div>
 
@@ -206,7 +322,7 @@
             </svg>
           </div>
           <h5 class="empty-title">No tasks yet</h5>
-          <p class="empty-text">Your task board is empty. Create your first task to get started.</p>
+          <p class="empty-text">Your workspace is clean. Create a new task or import an existing project to begin.</p>
           <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#taskModal">Add New Task</button>
         </div>
 
@@ -220,28 +336,41 @@
             </svg>
           </div>
           <h5 class="empty-title">No matching tasks</h5>
-          <p class="empty-text">Try adjusting your search or filters.</p>
-          <button class="btn btn-clear-solid" id="clearFiltersFromEmpty">Clear Filters</button>
+          <p class="empty-text">No tasks match your current search queries or active filters.</p>
+          <button class="btn btn-clear-solid" id="clearFiltersFromEmpty">Clear All Filters</button>
         </div>
 
-        <!-- Task Grid -->
+        <!-- VIEW 1: Table / List View -->
         <div id="taskGrid" class="task-grid d-none">
           <div class="task-list-card">
             <div class="task-list-header d-none d-lg-flex">
               <div class="col-check"><input type="checkbox" class="form-check-input task-checkbox" id="selectAllCheckboxHeader" title="Select all"></div>
-              <div class="col-name">Task Name</div>
-              <div class="col-priority">Priority</div>
-              <div class="col-status">Status</div>
+              <div class="col-name sortable-header" data-sort="name">Task Name <span class="sort-indicator"></span></div>
+              <div class="col-priority sortable-header" data-sort="priority">Priority <span class="sort-indicator"></span></div>
+              <div class="col-status sortable-header" data-sort="status">Status <span class="sort-indicator"></span></div>
               <div class="col-tags">Tags</div>
-              <div class="col-date">Assign Date</div>
+              <div class="col-date sortable-header" data-sort="dueDate">Assign Date <span class="sort-indicator"></span></div>
               <div class="col-actions"><span class="visually-hidden">Actions</span></div>
             </div>
             <div id="taskList"></div>
             <div id="mobileTaskList"></div>
           </div>
 
-          <nav class="task-pagination d-flex justify-content-between align-items-center flex-sm-row flex-column gap-2">
-            <small class="page-info" id="tableInfo">Showing 0 of 0 tasks</small>
+          <!-- Pagination & Page Size -->
+          <nav class="task-pagination d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <small class="page-info" id="tableInfo">Showing 0 of 0 tasks</small>
+              <div class="d-inline-flex align-items-center gap-1 ms-2">
+                <small class="text-muted">Per page:</small>
+                <select class="form-select form-select-sm page-size-select" id="pageSizeSelect" style="width: auto;">
+                  <option value="10" selected>10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="9999">All</option>
+                </select>
+              </div>
+            </div>
             <ul class="pagination pagination-sm mb-0 d-none d-sm-flex" id="paginationList"></ul>
             <div class="d-sm-none d-flex align-items-center gap-2 mobile-pager">
               <button class="btn btn-sm btn-outline-secondary" id="prevPageBtn">&larr; Prev</button>
@@ -250,22 +379,124 @@
             </div>
           </nav>
         </div>
+
+        <!-- VIEW 2: Kanban Board View -->
+        <div id="kanbanBoard" class="kanban-container d-none">
+          <div class="kanban-columns-row">
+            <!-- Pending Column -->
+            <div class="kanban-column" data-status="Pending" id="kanbanColPending">
+              <div class="kanban-column-header">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="kanban-status-dot dot-pending"></span>
+                  <span class="kanban-column-title">Pending</span>
+                  <span class="badge rounded-pill kanban-count" id="kanbanCountPending">0</span>
+                </div>
+                <button class="btn btn-sm btn-icon-ghost kanban-add-btn" data-add-status="Pending" title="Add task to Pending">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>
+                </button>
+              </div>
+              <div class="kanban-cards-dropzone" id="kanbanCardsPending" data-status="Pending"></div>
+            </div>
+
+            <!-- In Progress Column -->
+            <div class="kanban-column" data-status="In Progress" id="kanbanColInProgress">
+              <div class="kanban-column-header">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="kanban-status-dot dot-inprogress"></span>
+                  <span class="kanban-column-title">In Progress</span>
+                  <span class="badge rounded-pill kanban-count" id="kanbanCountInProgress">0</span>
+                </div>
+                <button class="btn btn-sm btn-icon-ghost kanban-add-btn" data-add-status="In Progress" title="Add task to In Progress">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>
+                </button>
+              </div>
+              <div class="kanban-cards-dropzone" id="kanbanCardsInProgress" data-status="In Progress"></div>
+            </div>
+
+            <!-- Completed Column -->
+            <div class="kanban-column" data-status="Completed" id="kanbanColCompleted">
+              <div class="kanban-column-header">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="kanban-status-dot dot-completed"></span>
+                  <span class="kanban-column-title">Completed</span>
+                  <span class="badge rounded-pill kanban-count" id="kanbanCountCompleted">0</span>
+                </div>
+                <button class="btn btn-sm btn-icon-ghost kanban-add-btn" data-add-status="Completed" title="Add task to Completed">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>
+                </button>
+              </div>
+              <div class="kanban-cards-dropzone" id="kanbanCardsCompleted" data-status="Completed"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 3: Analytics & Productivity View -->
+        <div id="analyticsView" class="analytics-container d-none">
+          <div class="row g-3 mb-4">
+            <div class="col-md-6 col-lg-3">
+              <div class="analytics-card">
+                <div class="analytics-card-label">Completion Velocity</div>
+                <div class="analytics-card-value text-success" id="analyticsVelocityVal">0%</div>
+                <div class="analytics-card-sub" id="analyticsVelocitySub">0 of 0 tasks completed</div>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+              <div class="analytics-card">
+                <div class="analytics-card-label">High Priority Tasks</div>
+                <div class="analytics-card-value text-danger" id="analyticsHighPriorityVal">0</div>
+                <div class="analytics-card-sub" id="analyticsHighPrioritySub">0 active urgent items</div>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+              <div class="analytics-card">
+                <div class="analytics-card-label">Subtasks Progress</div>
+                <div class="analytics-card-value text-primary" id="analyticsSubtasksVal">0%</div>
+                <div class="analytics-card-sub" id="analyticsSubtasksSub">0 of 0 checklist items done</div>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+              <div class="analytics-card">
+                <div class="analytics-card-label">Total Time Tracked</div>
+                <div class="analytics-card-value text-info" id="analyticsTimeVal">0h 0m</div>
+                <div class="analytics-card-sub">Across all focused tasks</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-lg-6">
+              <div class="analytics-section-card">
+                <h6 class="analytics-section-title">Priority Breakdown</h6>
+                <div id="priorityBreakdownChart" class="priority-chart-bars mt-3"></div>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="analytics-section-card">
+                <h6 class="analytics-section-title">Top Project Tags</h6>
+                <div id="tagsDistributionList" class="tags-distribution-list mt-3"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </main>
 
       <footer class="app-footer">
-        <div class="container-fluid">&copy; 2026 Developer Task Tracker</div>
+        <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <span>&copy; 2026 Developer Task Tracker &bull; Pure Client-Side Application</span>
+          <span class="text-muted small">Press <kbd>?</kbd> for Keyboard Shortcuts</span>
+        </div>
       </footer>
     </div>
   </div>
 
-  <!-- Mobile Add FAB -->
+  <!-- Mobile Floating Action Button (Add Task) -->
   <button class="fab d-lg-none" data-bs-toggle="modal" data-bs-target="#taskModal" aria-label="Add task">
     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
   </button>
 
-  <!-- Add/Edit Task Modal -->
+  <!-- Add / Edit Task Modal -->
   <div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-sm-down">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="modalTitle">Add New Task</h5>
@@ -275,18 +506,33 @@
           <form id="taskForm" class="needs-validation" novalidate>
             <div class="mb-3">
               <label for="taskName" class="form-label">Task Name <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="taskName" placeholder="Enter task name" maxlength="100" required>
-              <div class="invalid-feedback">Please enter a task name.</div>
+              <input type="text" class="form-control" id="taskName" placeholder="e.g. Implement OAuth2 login flow" maxlength="100" required>
+              <div class="invalid-feedback">Please enter a unique task name.</div>
             </div>
+
             <div class="mb-3">
-              <label for="taskDesc" class="form-label">Description</label>
-              <textarea class="form-control" id="taskDesc" rows="3" placeholder="Enter description" maxlength="500"></textarea>
+              <label for="taskDesc" class="form-label d-flex justify-content-between align-items-center">
+                <span>Description <small class="text-muted fw-normal">(Markdown supported)</small></span>
+              </label>
+              <textarea class="form-control font-monospace-desc" id="taskDesc" rows="3" placeholder="Add technical details, code snippets, or notes..." maxlength="1000"></textarea>
             </div>
+
+            <!-- Subtasks / Checklist Builder -->
+            <div class="mb-3">
+              <label class="form-label">Checklist / Subtasks</label>
+              <div id="subtaskBuilderList" class="subtask-builder-list mb-2"></div>
+              <div class="input-group input-group-sm">
+                <input type="text" class="form-control" id="newSubtaskInput" placeholder="Add subtask item..." maxlength="120">
+                <button class="btn btn-outline-secondary" type="button" id="addSubtaskBtn">+ Add Subtask</button>
+              </div>
+            </div>
+
             <div class="mb-3">
               <label for="taskTags" class="form-label">Tags</label>
-              <input type="text" class="form-control" id="taskTags" placeholder="Comma-separated, e.g. bug, urgent" maxlength="200">
-              <div class="form-text">Separate multiple tags with commas.</div>
+              <input type="text" class="form-control" id="taskTags" placeholder="frontend, auth, bug, v2" maxlength="200">
+              <div class="form-text">Comma-separated tags for categorization.</div>
             </div>
+
             <div class="row g-3 mb-1">
               <div class="col-md-4">
                 <label for="taskPriority" class="form-label">Priority</label>
@@ -305,8 +551,19 @@
                 </select>
               </div>
               <div class="col-md-4">
-                <label for="taskDueDate" class="form-label">Assign Date</label>
+                <label for="taskDueDate" class="form-label">Assign / Due Date</label>
                 <input type="date" class="form-control" id="taskDueDate">
+              </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+              <div class="col-md-6">
+                <label for="taskBlockedBy" class="form-label">Blocked By <small class="text-muted fw-normal">(Optional prerequisite)</small></label>
+                <input type="text" class="form-control" id="taskBlockedBy" placeholder="e.g. Backend API deployment" maxlength="100">
+              </div>
+              <div class="col-md-6">
+                <label for="taskTimeSpent" class="form-label">Time Spent <small class="text-muted fw-normal">(Minutes)</small></label>
+                <input type="number" class="form-control" id="taskTimeSpent" placeholder="0" min="0" max="99999">
               </div>
             </div>
           </form>
@@ -314,6 +571,169 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="button" class="btn btn-primary" id="saveTaskBtn">Save Task</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task Detail View Modal -->
+  <div class="modal fade" id="taskDetailModal" tabindex="-1" aria-labelledby="detailTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <h5 class="modal-title mb-0" id="detailTitle">Task Details</h5>
+            <span id="detailPriorityPill" class="pill"></span>
+            <span id="detailStatusPill" class="pill"></span>
+            <span id="detailDueBadge" class="overdue-badge d-none"></span>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="detail-section mb-3">
+            <h6 class="text-muted small text-uppercase fw-bold mb-1">Description</h6>
+            <div id="detailDescription" class="detail-markdown-body"></div>
+          </div>
+
+          <!-- Interactive Subtasks List -->
+          <div class="detail-section mb-3" id="detailSubtasksSection">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <h6 class="text-muted small text-uppercase fw-bold mb-0">Checklist</h6>
+              <small class="text-muted" id="detailSubtasksProgressText">0/0 completed</small>
+            </div>
+            <div class="progress mb-2" style="height: 6px;">
+              <div class="progress-bar bg-success" id="detailSubtasksProgressBar" style="width: 0%;"></div>
+            </div>
+            <div id="detailSubtasksList" class="detail-subtasks-list"></div>
+          </div>
+
+          <!-- Metadata Grid -->
+          <div class="row g-2 mb-3 py-2 border-top border-bottom bg-surface-2 rounded px-2">
+            <div class="col-sm-6 col-md-3">
+              <small class="text-muted d-block">Assign Date</small>
+              <span class="fw-semibold small" id="detailDueDate">—</span>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <small class="text-muted d-block">Time Logged</small>
+              <span class="fw-semibold small" id="detailTimeSpent">0m</span>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <small class="text-muted d-block">Created At</small>
+              <span class="fw-semibold small" id="detailCreatedAt">—</span>
+            </div>
+            <div class="col-sm-6 col-md-3">
+              <small class="text-muted d-block">Blocked By</small>
+              <span class="fw-semibold small text-danger" id="detailBlockedBy">—</span>
+            </div>
+          </div>
+
+          <div class="detail-section mb-3">
+            <h6 class="text-muted small text-uppercase fw-bold mb-1">Tags</h6>
+            <div id="detailTags" class="tag-cell"></div>
+          </div>
+
+          <!-- Developer Git Helpers -->
+          <div class="detail-section mb-3">
+            <h6 class="text-muted small text-uppercase fw-bold mb-2">Developer Helpers</h6>
+            <div class="d-flex gap-2 flex-wrap">
+              <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" id="copyBranchBtn">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M16 1H4a2 2 0 0 0-2 2v12h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/></svg>
+                <span>Copy Git Branch</span>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" id="copyCommitBtn">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M16 1H4a2 2 0 0 0-2 2v12h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/></svg>
+                <span>Copy Commit Message</span>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" id="detailFocusTimerBtn">
+                <span>⏱️ Focus on this Task</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Activity History -->
+          <div class="detail-section">
+            <h6 class="text-muted small text-uppercase fw-bold mb-2">Activity History</h6>
+            <div id="detailHistoryList" class="detail-history-timeline"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="detailEditBtn">Edit Task</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Command Palette Modal (Ctrl+K) -->
+  <div class="modal fade" id="commandPaletteModal" tabindex="-1" aria-labelledby="cmdPaletteTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content cmd-palette-content">
+        <div class="cmd-palette-header">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="text-muted"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+          <input type="text" class="cmd-palette-input" id="cmdPaletteInput" placeholder="Type a command or search tasks..." autocomplete="off">
+          <kbd class="cmd-esc-kbd">ESC</kbd>
+        </div>
+        <div class="cmd-palette-body" id="cmdPaletteResults"></div>
+        <div class="cmd-palette-footer">
+          <small class="text-muted">Use <kbd>&uarr;</kbd> <kbd>&darr;</kbd> to navigate, <kbd>Enter</kbd> to select, <kbd>Esc</kbd> to dismiss</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Daily Standup Summary Modal -->
+  <div class="modal fade" id="standupModal" tabindex="-1" aria-labelledby="standupTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="standupTitle">Daily Standup Summary</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small mb-2">Pre-formatted Markdown report ready to copy into Slack, Discord, or GitHub.</p>
+          <textarea class="form-control font-monospace" id="standupTextarea" rows="12" readonly></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="copyStandupBtn">Copy to Clipboard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard Shortcuts Cheat-Sheet Modal -->
+  <div class="modal fade" id="shortcutsModal" tabindex="-1" aria-labelledby="shortcutsTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="shortcutsTitle">Keyboard Shortcuts</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 35%;">Key</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><kbd>Ctrl</kbd> + <kbd>K</kbd> / <kbd>/</kbd></td><td>Open Command Palette / Search</td></tr>
+                <tr><td><kbd>N</kbd></td><td>Create New Task</td></tr>
+                <tr><td><kbd>L</kbd></td><td>Switch to List View</td></tr>
+                <tr><td><kbd>B</kbd></td><td>Switch to Kanban Board View</td></tr>
+                <tr><td><kbd>A</kbd></td><td>Switch to Analytics View</td></tr>
+                <tr><td><kbd>T</kbd></td><td>Toggle Dark / Light Mode</td></tr>
+                <tr><td><kbd>S</kbd></td><td>Generate Daily Standup</td></tr>
+                <tr><td><kbd>?</kbd></td><td>Open this shortcuts guide</td></tr>
+                <tr><td><kbd>Esc</kbd></td><td>Close active modal</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">Got it</button>
         </div>
       </div>
     </div>
@@ -365,8 +785,8 @@
                 <tr><td>Description</td><td>No</td><td class="text-muted">Task details</td></tr>
                 <tr><td>Priority</td><td>No</td><td class="text-muted">Low, Medium, or High</td></tr>
                 <tr><td>Status</td><td>No</td><td class="text-muted">Pending, In Progress, or Completed</td></tr>
-                 <tr><td>Assign Date</td><td>No</td><td class="text-muted">YYYY-MM-DD format</td></tr>
-                 <tr><td>Tags</td><td>No</td><td class="text-muted">Comma-separated list</td></tr>
+                <tr><td>Assign Date</td><td>No</td><td class="text-muted">YYYY-MM-DD format</td></tr>
+                <tr><td>Tags</td><td>No</td><td class="text-muted">Comma-separated list</td></tr>
               </tbody>
             </table>
           </div>
@@ -389,7 +809,9 @@
   <!-- Toast Container -->
   <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
 
+  <!-- Hidden File Inputs -->
   <input type="file" id="excelFileInput" accept=".xlsx,.xls" class="d-none">
+  <input type="file" id="jsonFileInput" accept=".json" class="d-none">
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
           integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"

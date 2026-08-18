@@ -1,10 +1,13 @@
 (function () {
   const STORAGE_KEY = 'taskTracker_tasks';
+  const THEME_KEY = 'taskTracker_theme';
 
+  // DOM Elements - Main Layout & Views
   const emptyState     = document.getElementById('emptyState');
   const noResultsState = document.getElementById('noResultsState');
   const taskGrid       = document.getElementById('taskGrid');
   const taskList       = document.getElementById('taskList');
+  const mobileTaskList = document.getElementById('mobileTaskList');
   const tableInfo      = document.getElementById('tableInfo');
   const toastContainer = document.getElementById('toastContainer');
   const filterBar      = document.getElementById('filterBar');
@@ -12,8 +15,62 @@
   const filterStatus   = document.getElementById('filterStatus');
   const filterPriority = document.getElementById('filterPriority');
   const filterDueDate  = document.getElementById('filterDueDate');
+  const sortBySelect   = document.getElementById('sortBySelect');
   const tagFilter      = document.getElementById('tagFilter');
   const clearBtn       = document.getElementById('clearFilters');
+  const clearFiltersFromEmpty = document.getElementById('clearFiltersFromEmpty');
+  const paginationList = document.getElementById('paginationList');
+  const pageSizeSelect = document.getElementById('pageSizeSelect');
+  const prevPageBtn    = document.getElementById('prevPageBtn');
+  const nextPageBtn    = document.getElementById('nextPageBtn');
+  const pageInfo       = document.getElementById('pageInfo');
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  const bulkActionBar  = document.getElementById('bulkActionBar');
+  const selectedCount  = document.getElementById('selectedCount');
+  const bulkDeleteBtn  = document.getElementById('bulkDeleteBtn');
+  const bulkCompleteBtn = document.getElementById('bulkCompleteBtn');
+  const bulkInProgressBtn = document.getElementById('bulkInProgressBtn');
+  const themeToggle    = document.getElementById('themeToggle');
+  const themeIcon      = document.getElementById('themeIcon');
+  const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+  const selectAllCheckboxHeader = document.getElementById('selectAllCheckboxHeader');
+
+  // View Switchers & Page Title
+  const viewListBtn      = document.getElementById('viewListBtn');
+  const viewBoardBtn     = document.getElementById('viewBoardBtn');
+  const viewAnalyticsBtn = document.getElementById('viewAnalyticsBtn');
+  const pageTitle        = document.getElementById('pageTitle');
+  const pageSubtitle     = document.getElementById('pageSubtitle');
+  const sidebarNav       = document.getElementById('sidebarNav');
+
+  // Kanban Elements
+  const kanbanBoard          = document.getElementById('kanbanBoard');
+  const kanbanCardsPending   = document.getElementById('kanbanCardsPending');
+  const kanbanCardsInProgress = document.getElementById('kanbanCardsInProgress');
+  const kanbanCardsCompleted = document.getElementById('kanbanCardsCompleted');
+  const kanbanCountPending   = document.getElementById('kanbanCountPending');
+  const kanbanCountInProgress = document.getElementById('kanbanCountInProgress');
+  const kanbanCountCompleted = document.getElementById('kanbanCountCompleted');
+
+  // Analytics Elements & Progress Health Bar
+  const analyticsView         = document.getElementById('analyticsView');
+  const completionRateBadge   = document.getElementById('completionRateBadge');
+  const progressBarCompleted  = document.getElementById('progressBarCompleted');
+  const progressBarInProgress = document.getElementById('progressBarInProgress');
+  const progressBarPending    = document.getElementById('progressBarPending');
+  const overdueCountText      = document.getElementById('overdueCountText');
+  const totalTimeLoggedText   = document.getElementById('totalTimeLoggedText');
+  const analyticsVelocityVal  = document.getElementById('analyticsVelocityVal');
+  const analyticsVelocitySub  = document.getElementById('analyticsVelocitySub');
+  const analyticsHighPriorityVal = document.getElementById('analyticsHighPriorityVal');
+  const analyticsHighPrioritySub = document.getElementById('analyticsHighPrioritySub');
+  const analyticsSubtasksVal  = document.getElementById('analyticsSubtasksVal');
+  const analyticsSubtasksSub  = document.getElementById('analyticsSubtasksSub');
+  const analyticsTimeVal      = document.getElementById('analyticsTimeVal');
+  const priorityBreakdownChart = document.getElementById('priorityBreakdownChart');
+  const tagsDistributionList  = document.getElementById('tagsDistributionList');
+
+  // Add / Edit Task Modal Elements
   const modalTask      = document.getElementById('taskModal');
   const form           = document.getElementById('taskForm');
   const saveBtn        = document.getElementById('saveTaskBtn');
@@ -24,6 +81,58 @@
   const fieldStatus    = document.getElementById('taskStatus');
   const fieldDueDate   = document.getElementById('taskDueDate');
   const fieldTags      = document.getElementById('taskTags');
+  const fieldBlockedBy = document.getElementById('taskBlockedBy');
+  const fieldTimeSpent = document.getElementById('taskTimeSpent');
+  const subtaskBuilderList = document.getElementById('subtaskBuilderList');
+  const newSubtaskInput = document.getElementById('newSubtaskInput');
+  const addSubtaskBtn   = document.getElementById('addSubtaskBtn');
+
+  // Task Detail Modal Elements
+  const taskDetailModalEl  = document.getElementById('taskDetailModal');
+  const detailTitle        = document.getElementById('detailTitle');
+  const detailPriorityPill = document.getElementById('detailPriorityPill');
+  const detailStatusPill   = document.getElementById('detailStatusPill');
+  const detailDueBadge     = document.getElementById('detailDueBadge');
+  const detailDescription  = document.getElementById('detailDescription');
+  const detailSubtasksSection = document.getElementById('detailSubtasksSection');
+  const detailSubtasksProgressText = document.getElementById('detailSubtasksProgressText');
+  const detailSubtasksProgressBar = document.getElementById('detailSubtasksProgressBar');
+  const detailSubtasksList = document.getElementById('detailSubtasksList');
+  const detailDueDate      = document.getElementById('detailDueDate');
+  const detailTimeSpent    = document.getElementById('detailTimeSpent');
+  const detailCreatedAt    = document.getElementById('detailCreatedAt');
+  const detailBlockedBy    = document.getElementById('detailBlockedBy');
+  const detailTags         = document.getElementById('detailTags');
+  const copyBranchBtn      = document.getElementById('copyBranchBtn');
+  const copyCommitBtn      = document.getElementById('copyCommitBtn');
+  const detailFocusTimerBtn = document.getElementById('detailFocusTimerBtn');
+  const detailHistoryList  = document.getElementById('detailHistoryList');
+  const detailEditBtn      = document.getElementById('detailEditBtn');
+
+  // Command Palette Elements
+  const commandPaletteModalEl = document.getElementById('commandPaletteModal');
+  const cmdPaletteBtn         = document.getElementById('cmdPaletteBtn');
+  const cmdPaletteInput       = document.getElementById('cmdPaletteInput');
+  const cmdPaletteResults     = document.getElementById('cmdPaletteResults');
+
+  // Focus Timer Elements
+  const focusTimerWidget = document.getElementById('focusTimerWidget');
+  const timerDisplay     = document.getElementById('timerDisplay');
+  const timerToggleBtn   = document.getElementById('timerToggleBtn');
+  const timerToggleIcon  = document.getElementById('timerToggleIcon');
+  const timerResetBtn    = document.getElementById('timerResetBtn');
+
+  // Daily Standup Elements
+  const standupModalEl    = document.getElementById('standupModal');
+  const standupTextarea   = document.getElementById('standupTextarea');
+  const copyStandupBtn    = document.getElementById('copyStandupBtn');
+  const sidebarStandupBtn = document.getElementById('sidebarStandupBtn');
+
+  // Shortcuts Cheat Sheet Elements
+  const shortcutsModalEl    = document.getElementById('shortcutsModal');
+  const sidebarShortcutsBtn = document.getElementById('sidebarShortcutsBtn');
+
+  // Confirm Modal Elements
   const confirmModalEl = document.getElementById('confirmModal');
   const confirmTitle   = document.getElementById('confirmTitle');
   const confirmBody    = document.getElementById('confirmBody');
@@ -31,31 +140,39 @@
   const confirmBtnText = document.getElementById('confirmBtnText');
   const confirmSpinner = document.getElementById('confirmBtnSpinner');
   const confirmIcon    = document.getElementById('confirmIcon');
-  const excelFileInput = document.getElementById('excelFileInput');
-  const exportBtn      = document.getElementById('exportExcelBtn');
-  const importBtn      = document.getElementById('importExcelBtn');
-  const excelModalEl   = document.getElementById('excelInstructionModal');
-  const proceedUpload  = document.getElementById('proceedUploadBtn');
-  const clearFiltersFromEmpty = document.getElementById('clearFiltersFromEmpty');
-  const paginationList = document.getElementById('paginationList');
-  const mobileTaskList = document.getElementById('mobileTaskList');
-  const prevPageBtn = document.getElementById('prevPageBtn');
-  const nextPageBtn = document.getElementById('nextPageBtn');
-  const pageInfo = document.getElementById('pageInfo');
-  const loadingOverlay = document.getElementById('loadingOverlay');
-  const bulkActionBar = document.getElementById('bulkActionBar');
-  const selectedCount = document.getElementById('selectedCount');
-  const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
-  const bulkCompleteBtn = document.getElementById('bulkCompleteBtn');
-  const themeToggle = document.getElementById('themeToggle');
-  const themeIcon = document.getElementById('themeIcon');
-  const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-  const selectAllCheckboxHeader = document.getElementById('selectAllCheckboxHeader');
 
-  const THEME_KEY = 'taskTracker_theme';
+  // Import / Export / Backup Elements
+  const excelFileInput   = document.getElementById('excelFileInput');
+  const jsonFileInput    = document.getElementById('jsonFileInput');
+  const exportBtn        = document.getElementById('exportExcelBtn');
+  const importBtn        = document.getElementById('importExcelBtn');
+  const exportJsonBtn    = document.getElementById('exportJsonBtn');
+  const importJsonBtn    = document.getElementById('importJsonBtn');
+  const exportCsvBtn     = document.getElementById('exportCsvBtn');
+  const exportMarkdownBtn = document.getElementById('exportMarkdownBtn');
+  const excelModalEl     = document.getElementById('excelInstructionModal');
+  const proceedUpload    = document.getElementById('proceedUploadBtn');
+
+  // Application State
+  let currentView = 'list'; // 'list', 'kanban', 'analytics'
   let selectedIds = new Set();
   let lastDeleted = null;
   let undoTimeout = null;
+  let editId = null;
+  let detailTaskId = null;
+  let currentPage = 1;
+  let pageSize = 10;
+  const selectedTags = new Set();
+  let tempSubtasks = [];
+  let cmdPaletteActiveIndex = 0;
+  let cmdPaletteItems = [];
+
+  // Focus Timer State
+  let timerDuration = 25 * 60; // 25 mins in seconds
+  let timerRemaining = 25 * 60;
+  let timerInterval = null;
+  let timerIsRunning = false;
+  let timerActiveTaskId = null;
 
   const priorityClass = {
     Low: 'pill-low',
@@ -82,11 +199,21 @@
     warning: '<svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg>'
   };
 
+  // Utilities
   function escapeHtml(str) {
     if (typeof str !== 'string') return '';
     return str.replace(/[&<>"']/g, function (m) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' }[m];
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#27;' }[m];
     });
+  }
+
+  function slugify(text) {
+    return String(text || '')
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'task';
   }
 
   function localDateStr(d) {
@@ -109,6 +236,23 @@
     return MONTHS[m - 1] + ' ' + d + ', ' + y;
   }
 
+  function formatDateTime(iso) {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return escapeHtml(iso);
+      return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return escapeHtml(iso);
+    }
+  }
+
+  function priorityWeight(p) {
+    if (p === 'High') return 3;
+    if (p === 'Medium') return 2;
+    return 1;
+  }
+
   function priorityArrow(p) {
     if (p === 'High') return '<span class="priority-arrow">&#9650;</span>';
     if (p === 'Low') return '<span class="priority-arrow">&#9660;</span>';
@@ -125,11 +269,66 @@
     return { cls: '', label: '' };
   }
 
-  let editId = null;
-  const PAGE_SIZE = 10;
-  let currentPage = 1;
-  const selectedTags = new Set();
+  // Safe Markdown Light Parser
+  function parseMarkdown(text) {
+    if (!text) return '<p class="text-muted mb-0">No description provided.</p>';
+    let html = escapeHtml(text);
 
+    // Code blocks ```code```
+    html = html.replace(/```([\s\S]*?)```/g, function (match, p1) {
+      return '<pre><code>' + p1.trim() + '</code></pre>';
+    });
+
+    // Inline code `code`
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Bold **text**
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+    // Italic *text*
+    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+    // Blockquotes > text
+    html = html.replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>');
+
+    // Unordered lists - item
+    html = html.replace(/^-\s+(.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+
+    // Links [title](url)
+    html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+    // Paragraphs & Line Breaks
+    html = html.split(/\n\n+/).map(function (block) {
+      if (block.startsWith('<pre>') || block.startsWith('<ul>') || block.startsWith('<blockquote>')) {
+        return block;
+      }
+      return '<p class="mb-2">' + block.replace(/\n/g, '<br>') + '</p>';
+    }).join('');
+
+    return html;
+  }
+
+  // Sound generator for Focus Timer alert (using Web Audio API, zero dependencies)
+  function playTimerAlertSound() {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.6);
+    } catch (e) {}
+  }
+
+  // Schema & Task Persistence with Seamless Backward Compatibility
   function isValidTask(obj) {
     return obj && typeof obj === 'object' && typeof obj.id === 'string' && typeof obj.name === 'string';
   }
@@ -142,6 +341,13 @@
       if (!Array.isArray(parsed)) return [];
       return parsed.filter(isValidTask).map(function (t) {
         if (!Array.isArray(t.tags)) t.tags = [];
+        if (!Array.isArray(t.subtasks)) t.subtasks = [];
+        if (typeof t.timeSpent !== 'number') t.timeSpent = 0;
+        if (typeof t.blockedBy !== 'string') t.blockedBy = '';
+        if (!Array.isArray(t.history)) {
+          t.history = [{ action: 'Created', timestamp: t.createdAt || new Date().toISOString() }];
+        }
+        if (!t.updatedAt) t.updatedAt = t.createdAt || new Date().toISOString();
         return t;
       });
     } catch (e) {
@@ -170,15 +376,21 @@
     if (tasks.some(function (t) { return t.name.trim().toLowerCase() === nameKey; })) {
       return null;
     }
+    const now = new Date().toISOString();
     const task = {
       id: generateID(),
-      name: data.name,
+      name: data.name.trim(),
       description: data.description || '',
       tags: data.tags || [],
       priority: data.priority || 'Medium',
       status: data.status || 'Pending',
       dueDate: data.dueDate || '',
-      createdAt: new Date().toISOString()
+      blockedBy: data.blockedBy || '',
+      timeSpent: parseInt(data.timeSpent, 10) || 0,
+      subtasks: Array.isArray(data.subtasks) ? data.subtasks : [],
+      createdAt: now,
+      updatedAt: now,
+      history: [{ action: 'Created', timestamp: now }]
     };
     tasks.unshift(task);
     return saveTasks(tasks) ? task : null;
@@ -189,7 +401,25 @@
     const tasks = loadTasks();
     const idx = tasks.findIndex(function (t) { return t.id === id; });
     if (idx === -1) return null;
-    tasks[idx] = { ...tasks[idx], ...data, id: id };
+
+    const existing = tasks[idx];
+    const history = Array.isArray(existing.history) ? [...existing.history] : [];
+    const now = new Date().toISOString();
+
+    if (data.status && data.status !== existing.status) {
+      history.unshift({ action: 'Status changed to ' + data.status, timestamp: now });
+    }
+    if (data.priority && data.priority !== existing.priority) {
+      history.unshift({ action: 'Priority changed to ' + data.priority, timestamp: now });
+    }
+
+    tasks[idx] = {
+      ...existing,
+      ...data,
+      id: id,
+      updatedAt: now,
+      history: history.slice(0, 20) // keep last 20 entries
+    };
     return saveTasks(tasks) ? tasks[idx] : null;
   }
 
@@ -204,22 +434,27 @@
     const tasks = loadTasks();
     const source = tasks.find(function (t) { return t.id === id; });
     if (!source) return null;
+    const now = new Date().toISOString();
     const task = {
       ...source,
       id: generateID(),
       name: source.name + ' (Copy)',
-      createdAt: new Date().toISOString()
+      createdAt: now,
+      updatedAt: now,
+      history: [{ action: 'Duplicated from ' + source.name, timestamp: now }]
     };
     tasks.unshift(task);
     return saveTasks(tasks) ? task : null;
   }
 
+  // Filtering & Sorting
   function getFilterState() {
     return {
       search: searchInput.value.trim().toLowerCase(),
       status: filterStatus.value,
       priority: filterPriority.value,
       dueDateFilter: filterDueDate.value,
+      sortBy: sortBySelect.value || 'createdAt-desc'
     };
   }
 
@@ -229,9 +464,11 @@
 
     if (state.search) {
       result = result.filter(function (t) {
-        return t.name.toLowerCase().includes(state.search) ||
-               (t.description && t.description.toLowerCase().includes(state.search)) ||
-               (t.tags || []).some(function (tag) { return tag.toLowerCase().includes(state.search); });
+        const inName = t.name.toLowerCase().includes(state.search);
+        const inDesc = t.description && t.description.toLowerCase().includes(state.search);
+        const inTags = (t.tags || []).some(function (tag) { return tag.toLowerCase().includes(state.search); });
+        const inSubtasks = (t.subtasks || []).some(function (st) { return (st.text || '').toLowerCase().includes(state.search); });
+        return inName || inDesc || inTags || inSubtasks;
       });
     }
 
@@ -253,7 +490,41 @@
       result = result.filter(function (t) { return t.dueDate === state.dueDateFilter; });
     }
 
-    return result;
+    return applySorting(result, state.sortBy);
+  }
+
+  function applySorting(tasks, sortKey) {
+    const list = [...tasks];
+    switch (sortKey) {
+      case 'createdAt-asc':
+        return list.sort(function (a, b) { return (a.createdAt || '').localeCompare(b.createdAt || ''); });
+      case 'createdAt-desc':
+        return list.sort(function (a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); });
+      case 'name-asc':
+        return list.sort(function (a, b) { return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }); });
+      case 'name-desc':
+        return list.sort(function (a, b) { return b.name.localeCompare(a.name, undefined, { sensitivity: 'base' }); });
+      case 'priority-desc':
+        return list.sort(function (a, b) { return priorityWeight(b.priority) - priorityWeight(a.priority); });
+      case 'priority-asc':
+        return list.sort(function (a, b) { return priorityWeight(a.priority) - priorityWeight(b.priority); });
+      case 'dueDate-asc':
+        return list.sort(function (a, b) {
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return a.dueDate.localeCompare(b.dueDate);
+        });
+      case 'dueDate-desc':
+        return list.sort(function (a, b) {
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return b.dueDate.localeCompare(a.dueDate);
+        });
+      case 'status-asc':
+        return list.sort(function (a, b) { return a.status.localeCompare(b.status); });
+      default:
+        return list;
+    }
   }
 
   function resetFilters() {
@@ -264,6 +535,1541 @@
     selectedTags.clear();
   }
 
+  // Subtask Progress Helper
+  function getSubtaskStats(subtasks) {
+    const list = Array.isArray(subtasks) ? subtasks : [];
+    const total = list.length;
+    const completed = list.filter(function (st) { return st.completed; }).length;
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { total: total, completed: completed, pct: pct };
+  }
+
+  function subtaskMiniHtml(subtasks) {
+    const stats = getSubtaskStats(subtasks);
+    if (stats.total === 0) return '';
+    return '<div class="subtask-progress-mini" title="' + stats.completed + ' of ' + stats.total + ' subtasks completed">' +
+      '<div class="progress rounded-pill"><div class="progress-bar bg-success" style="width: ' + stats.pct + '%"></div></div>' +
+      '<span>' + stats.completed + '/' + stats.total + '</span>' +
+    '</div>';
+  }
+
+  // HTML Rendering Helpers
+  function actionButtonsHtml(id) {
+    const idAttr = escapeHtml(id);
+    const moreSvg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>';
+    const viewSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>';
+    const editSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
+    const copySvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16 1H4a2 2 0 0 0-2 2v12h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zM8 21h11a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1z"/></svg>';
+    const timerSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z"/></svg>';
+    const delSvg  = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
+
+    return '<div class="dropdown task-action-menu">' +
+      '<button class="task-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Task actions">' + moreSvg + '</button>' +
+      '<ul class="dropdown-menu dropdown-menu-end shadow-sm">' +
+        '<li><button class="dropdown-item" data-action="view" data-id="' + idAttr + '">' + viewSvg + 'View Details</button></li>' +
+        '<li><button class="dropdown-item" data-action="edit" data-id="' + idAttr + '">' + editSvg + 'Edit Task</button></li>' +
+        '<li><button class="dropdown-item" data-action="timer" data-id="' + idAttr + '">' + timerSvg + 'Focus on Task</button></li>' +
+        '<li><button class="dropdown-item" data-action="copy" data-id="' + idAttr + '">' + copySvg + 'Duplicate</button></li>' +
+        '<li><hr class="dropdown-divider"></li>' +
+        '<li><button class="dropdown-item text-danger" data-action="delete" data-id="' + idAttr + '">' + delSvg + 'Delete</button></li>' +
+      '</ul></div>';
+  }
+
+  function tagChipsHtml(tags) {
+    const list = Array.isArray(tags) ? tags : [];
+    if (list.length === 0) return '<span class="text-muted">—</span>';
+    return list.map(function (t) {
+      return '<span class="task-tag">' + escapeHtml(t) + '</span>';
+    }).join('');
+  }
+
+  function renderRow(task) {
+    const due = getDueDateInfo(task);
+    const isCompleted = task.status === 'Completed';
+    const priorityCls = 'pill ' + (priorityClass[task.priority] || 'pill-low');
+    const statusCls = 'pill ' + (statusClass[task.status] || 'pill-pending');
+    const subtaskHtml = subtaskMiniHtml(task.subtasks);
+
+    return '<div class="task-row' + (isCompleted ? ' is-completed' : '') + '">' +
+      '<div class="col-check"><input type="checkbox" class="form-check-input task-checkbox" data-id="' + escapeHtml(task.id) + '"' + (selectedIds.has(task.id) ? ' checked' : '') + '></div>' +
+      '<div class="col-name">' +
+        '<div class="task-title clickable-title ' + due.cls + '" data-action="view" data-id="' + escapeHtml(task.id) + '">' +
+          escapeHtml(task.name) + (due.label ? '<span class="overdue-badge">' + due.label + '</span>' : '') +
+          (task.blockedBy ? '<span class="badge bg-danger-subtle text-danger ms-2 border border-danger-subtle" style="font-size: 0.65rem;">Blocked</span>' : '') +
+        '</div>' +
+        (task.description ? '<div class="task-sub">' + escapeHtml(task.description) + '</div>' : '') +
+        subtaskHtml +
+      '</div>' +
+      '<div class="col-priority">' +
+        '<span class="priority-cell priority-' + escapeHtml(task.priority.toLowerCase()) + '">' +
+          priorityArrow(task.priority) +
+          '<span class="' + priorityCls + ' clickable-pill" data-action="toggle-priority" data-id="' + escapeHtml(task.id) + '" title="Click to cycle priority">' + escapeHtml(task.priority) + '</span>' +
+        '</span>' +
+      '</div>' +
+      '<div class="col-status">' +
+        '<span class="' + statusCls + ' clickable-pill" data-action="toggle-status" data-id="' + escapeHtml(task.id) + '" title="Click to cycle status">' + escapeHtml(task.status) + '</span>' +
+      '</div>' +
+      '<div class="col-tags tag-cell">' + tagChipsHtml(task.tags) + '</div>' +
+      '<div class="col-date">' + (task.dueDate ? formatDate(task.dueDate) : '—') + '</div>' +
+      '<div class="col-actions">' + actionButtonsHtml(task.id) + '</div>' +
+    '</div>';
+  }
+
+  function renderMobileCard(task) {
+    const due = getDueDateInfo(task);
+    const isCompleted = task.status === 'Completed';
+    const priorityCls = 'pill ' + (priorityClass[task.priority] || 'pill-low');
+    const statusCls = 'pill ' + (statusClass[task.status] || 'pill-pending');
+    const subtaskHtml = subtaskMiniHtml(task.subtasks);
+
+    return '<div class="mobile-task-card' + (isCompleted ? ' is-completed' : '') + '">' +
+      '<div class="mobile-task-card-header">' +
+        '<input type="checkbox" class="form-check-input task-checkbox me-1" data-id="' + escapeHtml(task.id) + '"' + (selectedIds.has(task.id) ? ' checked' : '') + '">' +
+        '<span class="mobile-task-card-name clickable-title ' + due.cls + '" data-action="view" data-id="' + escapeHtml(task.id) + '">' +
+          escapeHtml(task.name) + (due.label ? '<span class="overdue-badge">' + due.label + '</span>' : '') +
+          (task.blockedBy ? '<span class="badge bg-danger-subtle text-danger ms-1" style="font-size: 0.65rem;">Blocked</span>' : '') +
+        '</span>' +
+      '</div>' +
+      (task.description ? '<div class="mobile-task-card-body"><div class="mobile-task-card-row"><span class="mobile-task-card-label">Description</span><span class="text-truncate">' + escapeHtml(task.description) + '</span></div></div>' : '') +
+      subtaskHtml +
+      '<div class="mobile-task-card-body mt-1">' +
+        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Priority</span><span class="' + priorityCls + ' clickable-pill" data-action="toggle-priority" data-id="' + escapeHtml(task.id) + '">' + escapeHtml(task.priority) + '</span></div>' +
+        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Status</span><span class="' + statusCls + ' clickable-pill" data-action="toggle-status" data-id="' + escapeHtml(task.id) + '">' + escapeHtml(task.status) + '</span></div>' +
+        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Tags</span><span>' + tagChipsHtml(task.tags) + '</span></div>' +
+        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Assign Date</span><span>' + (task.dueDate ? formatDate(task.dueDate) : '—') + '</span></div>' +
+      '</div>' +
+      '<div class="mobile-task-card-actions">' + actionButtonsHtml(task.id) + '</div>' +
+    '</div>';
+  }
+
+  function renderKanbanCard(task) {
+    const due = getDueDateInfo(task);
+    const subtaskHtml = subtaskMiniHtml(task.subtasks);
+    const priorityLower = (task.priority || 'medium').toLowerCase();
+
+    return '<div class="kanban-card priority-' + priorityLower + '" draggable="true" data-id="' + escapeHtml(task.id) + '">' +
+      '<div class="d-flex justify-content-between align-items-start gap-2">' +
+        '<span class="kanban-card-title ' + due.cls + '" data-action="view" data-id="' + escapeHtml(task.id) + '">' +
+          escapeHtml(task.name) + (due.label ? '<span class="overdue-badge">' + due.label + '</span>' : '') +
+        '</span>' +
+        actionButtonsHtml(task.id) +
+      '</div>' +
+      (task.description ? '<div class="kanban-card-desc">' + escapeHtml(task.description) + '</div>' : '') +
+      subtaskHtml +
+      '<div class="kanban-card-footer">' +
+        '<div class="tag-cell">' + tagChipsHtml(task.tags) + '</div>' +
+        '<span>' + (task.dueDate ? formatDate(task.dueDate) : '—') + '</span>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderKanban(filteredTasks) {
+    const pending = filteredTasks.filter(function (t) { return t.status === 'Pending'; });
+    const inProgress = filteredTasks.filter(function (t) { return t.status === 'In Progress'; });
+    const completed = filteredTasks.filter(function (t) { return t.status === 'Completed'; });
+
+    kanbanCountPending.textContent = pending.length;
+    kanbanCountInProgress.textContent = inProgress.length;
+    kanbanCountCompleted.textContent = completed.length;
+
+    kanbanCardsPending.innerHTML = pending.length > 0
+      ? pending.map(renderKanbanCard).join('')
+      : '<div class="kanban-empty-col">No pending tasks</div>';
+
+    kanbanCardsInProgress.innerHTML = inProgress.length > 0
+      ? inProgress.map(renderKanbanCard).join('')
+      : '<div class="kanban-empty-col">No tasks in progress</div>';
+
+    kanbanCardsCompleted.innerHTML = completed.length > 0
+      ? completed.map(renderKanbanCard).join('')
+      : '<div class="kanban-empty-col">No completed tasks</div>';
+
+    attachKanbanDragEvents();
+  }
+
+  function attachKanbanDragEvents() {
+    const cards = document.querySelectorAll('.kanban-card');
+    cards.forEach(function (card) {
+      card.addEventListener('dragstart', function (e) {
+        e.dataTransfer.setData('text/plain', this.dataset.id);
+        e.dataTransfer.effectAllowed = 'move';
+        this.classList.add('dragging');
+      });
+      card.addEventListener('dragend', function () {
+        this.classList.remove('dragging');
+      });
+    });
+
+    const dropzones = [kanbanCardsPending, kanbanCardsInProgress, kanbanCardsCompleted];
+    dropzones.forEach(function (zone) {
+      if (!zone) return;
+      zone.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        this.classList.add('drag-over');
+      });
+      zone.addEventListener('dragleave', function () {
+        this.classList.remove('drag-over');
+      });
+      zone.addEventListener('drop', function (e) {
+        e.preventDefault();
+        this.classList.remove('drag-over');
+        const taskId = e.dataTransfer.getData('text/plain');
+        const targetStatus = this.dataset.status;
+        if (!taskId || !targetStatus) return;
+
+        const task = loadTasks().find(function (t) { return t.id === taskId; });
+        if (task && task.status !== targetStatus) {
+          updateTask(taskId, { status: targetStatus });
+          showToast('Moved "' + task.name + '" to ' + targetStatus, 'success');
+          refresh();
+        }
+      });
+    });
+  }
+
+  function renderAnalytics(allTasks) {
+    const total = allTasks.length;
+    let completed = 0;
+    let inProgress = 0;
+    let pending = 0;
+    let high = 0;
+    let medium = 0;
+    let low = 0;
+    let totalSubtasks = 0;
+    let completedSubtasks = 0;
+    let totalMinutes = 0;
+    const tagCountMap = {};
+
+    for (let i = 0; i < total; i++) {
+      const t = allTasks[i];
+      if (t.status === 'Completed') completed++;
+      else if (t.status === 'In Progress') inProgress++;
+      else pending++;
+
+      if (t.priority === 'High') high++;
+      else if (t.priority === 'Medium') medium++;
+      else low++;
+
+      (t.subtasks || []).forEach(function (st) {
+        totalSubtasks++;
+        if (st.completed) completedSubtasks++;
+      });
+
+      totalMinutes += (parseInt(t.timeSpent, 10) || 0);
+
+      (t.tags || []).forEach(function (tag) {
+        tagCountMap[tag] = (tagCountMap[tag] || 0) + 1;
+      });
+    }
+
+    const velocityPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const subtaskPct = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+    const hoursLogged = Math.floor(totalMinutes / 60);
+    const minsLogged = totalMinutes % 60;
+
+    analyticsVelocityVal.textContent = velocityPct + '%';
+    analyticsVelocitySub.textContent = completed + ' of ' + total + ' tasks completed';
+    analyticsHighPriorityVal.textContent = high;
+    analyticsHighPrioritySub.textContent = high + ' active urgent tasks';
+    analyticsSubtasksVal.textContent = subtaskPct + '%';
+    analyticsSubtasksSub.textContent = completedSubtasks + ' of ' + totalSubtasks + ' checklist items done';
+    analyticsTimeVal.textContent = hoursLogged + 'h ' + minsLogged + 'm';
+
+    // Priority breakdown bars
+    const highPct = total > 0 ? Math.round((high / total) * 100) : 0;
+    const medPct = total > 0 ? Math.round((medium / total) * 100) : 0;
+    const lowPct = total > 0 ? Math.round((low / total) * 100) : 0;
+
+    priorityBreakdownChart.innerHTML =
+      '<div class="priority-bar-item">' +
+        '<div class="priority-bar-meta"><span>High Priority</span><span class="text-danger fw-bold">' + high + ' (' + highPct + '%)</span></div>' +
+        '<div class="progress" style="height: 8px;"><div class="progress-bar bg-danger" style="width: ' + highPct + '%"></div></div>' +
+      '</div>' +
+      '<div class="priority-bar-item mt-2">' +
+        '<div class="priority-bar-meta"><span>Medium Priority</span><span class="text-warning fw-bold">' + medium + ' (' + medPct + '%)</span></div>' +
+        '<div class="progress" style="height: 8px;"><div class="progress-bar bg-warning" style="width: ' + medPct + '%"></div></div>' +
+      '</div>' +
+      '<div class="priority-bar-item mt-2">' +
+        '<div class="priority-bar-meta"><span>Low Priority</span><span class="text-primary fw-bold">' + low + ' (' + lowPct + '%)</span></div>' +
+        '<div class="progress" style="height: 8px;"><div class="progress-bar bg-primary" style="width: ' + lowPct + '%"></div></div>' +
+      '</div>';
+
+    // Top tags distribution
+    const sortedTags = Object.keys(tagCountMap).sort(function (a, b) {
+      return tagCountMap[b] - tagCountMap[a];
+    });
+
+    tagsDistributionList.innerHTML = sortedTags.length > 0
+      ? sortedTags.slice(0, 10).map(function (tag) {
+          return '<span class="tag-dist-item">#' + escapeHtml(tag) + ' <span class="badge bg-secondary rounded-pill">' + tagCountMap[tag] + '</span></span>';
+        }).join('')
+      : '<span class="text-muted small">No tags used yet</span>';
+  }
+
+  function updateDashboardHealth(allTasks) {
+    const total = allTasks.length;
+    let completed = 0;
+    let inProgress = 0;
+    let pending = 0;
+    let overdue = 0;
+    let totalMinutes = 0;
+    const today = localDateStr(new Date());
+
+    for (let i = 0; i < total; i++) {
+      const t = allTasks[i];
+      if (t.status === 'Completed') completed++;
+      else if (t.status === 'In Progress') inProgress++;
+      else pending++;
+
+      if (t.dueDate && t.dueDate < today && t.status !== 'Completed') {
+        overdue++;
+      }
+      totalMinutes += (parseInt(t.timeSpent, 10) || 0);
+    }
+
+    const cards = document.querySelectorAll('.stat-card h3');
+    if (cards.length >= 4) {
+      cards[0].textContent = total;
+      cards[1].textContent = inProgress;
+      cards[2].textContent = completed;
+      cards[3].textContent = pending;
+    }
+
+    const completedPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const inProgressPct = total > 0 ? Math.round((inProgress / total) * 100) : 0;
+    const pendingPct = total > 0 ? (100 - completedPct - inProgressPct) : 0;
+
+    completionRateBadge.textContent = completedPct + '% (' + completed + '/' + total + ')';
+    progressBarCompleted.style.width = completedPct + '%';
+    progressBarInProgress.style.width = inProgressPct + '%';
+    progressBarPending.style.width = pendingPct + '%';
+
+    if (overdue > 0) {
+      overdueCountText.classList.remove('d-none');
+      overdueCountText.textContent = overdue + ' Overdue';
+    } else {
+      overdueCountText.classList.add('d-none');
+    }
+
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    totalTimeLoggedText.textContent = '⏱️ ' + (hours > 0 ? hours + 'h ' : '') + mins + 'm logged';
+  }
+
+  function getPage(tasks) {
+    let start = (currentPage - 1) * pageSize;
+    return tasks.slice(start, start + pageSize);
+  }
+
+  function renderPagination(total) {
+    let totalPages = Math.ceil(total / pageSize) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    let html = '';
+
+    html += '<li class="page-item' + (currentPage === 1 ? ' disabled' : '') + '"><a class="page-link" href="#" data-page="prev">Previous</a></li>';
+    for (let p = 1; p <= totalPages; p++) {
+      html += '<li class="page-item' + (p === currentPage ? ' active' : '') + '"><a class="page-link" href="#" data-page="' + p + '">' + p + '</a></li>';
+    }
+    html += '<li class="page-item' + (currentPage === totalPages ? ' disabled' : '') + '"><a class="page-link" href="#" data-page="next">Next</a></li>';
+
+    paginationList.innerHTML = html;
+  }
+
+  function updateBulkActions() {
+    const count = selectedIds.size;
+    if (count > 0) {
+      bulkActionBar.classList.remove('d-none');
+      selectedCount.textContent = count + ' selected';
+    } else {
+      bulkActionBar.classList.add('d-none');
+    }
+    const pageBoxes = document.querySelectorAll('#taskList .task-checkbox, #mobileTaskList .task-checkbox');
+    const total = pageBoxes.length;
+    let checkedCount = 0;
+    pageBoxes.forEach(function (cb) { if (cb.checked) checkedCount++; });
+    const allChecked = total > 0 && checkedCount === total;
+    const someChecked = checkedCount > 0 && checkedCount < total;
+    if (selectAllCheckbox) {
+      selectAllCheckbox.checked = allChecked;
+      selectAllCheckbox.indeterminate = someChecked;
+    }
+    if (selectAllCheckboxHeader) {
+      selectAllCheckboxHeader.checked = allChecked;
+      selectAllCheckboxHeader.indeterminate = someChecked;
+    }
+  }
+
+  function updateSortIndicators() {
+    const sortVal = sortBySelect.value || 'createdAt-desc';
+    const parts = sortVal.split('-');
+    const field = parts[0];
+    const dir = parts[1];
+
+    document.querySelectorAll('.sortable-header').forEach(function (th) {
+      const target = th.dataset.sort;
+      const indicator = th.querySelector('.sort-indicator');
+      if (!indicator) return;
+      if (target === field) {
+        indicator.textContent = dir === 'asc' ? '▲' : '▼';
+      } else {
+        indicator.textContent = '';
+      }
+    });
+  }
+
+  function switchView(viewName) {
+    currentView = viewName;
+    viewListBtn.classList.toggle('active', viewName === 'list');
+    viewBoardBtn.classList.toggle('active', viewName === 'kanban');
+    viewAnalyticsBtn.classList.toggle('active', viewName === 'analytics');
+
+    if (viewName === 'list') {
+      pageTitle.textContent = 'Task List';
+      pageSubtitle.textContent = 'Manage and organize tasks in detailed table view';
+    } else if (viewName === 'kanban') {
+      pageTitle.textContent = 'Kanban Board';
+      pageSubtitle.textContent = 'Visual workflow with drag-and-drop progress tracking';
+    } else if (viewName === 'analytics') {
+      pageTitle.textContent = 'Productivity Metrics';
+      pageSubtitle.textContent = 'Velocity, time logging, and project distribution analytics';
+    }
+    refresh();
+  }
+
+  function setTheme(theme) {
+    if (theme === 'dark') {
+      document.documentElement.dataset.bsTheme = 'dark';
+      document.documentElement.setAttribute('data-theme', 'dark');
+      themeIcon.innerHTML = '<path d="M8 1a7 7 0 0 0 0 14 7 7 0 0 0 0-14z"/>';
+    } else {
+      delete document.documentElement.dataset.bsTheme;
+      document.documentElement.removeAttribute('data-theme');
+      themeIcon.innerHTML = '<path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>';
+    }
+    try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+  }
+
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    setTheme(isDark ? 'light' : 'dark');
+  }
+
+  function render(allTasks, filteredTasks) {
+    let hasTasks = allTasks.length > 0;
+    let hasResults = filteredTasks.length > 0;
+
+    if (!hasTasks) {
+      emptyState.classList.remove('d-none');
+      noResultsState.classList.add('d-none');
+      taskGrid.classList.add('d-none');
+      kanbanBoard.classList.add('d-none');
+      analyticsView.classList.add('d-none');
+      filterBar.classList.add('d-none');
+      mobileTaskList.innerHTML = '';
+      selectedIds.clear();
+    } else if (!hasResults && currentView === 'list') {
+      emptyState.classList.add('d-none');
+      noResultsState.classList.remove('d-none');
+      taskGrid.classList.add('d-none');
+      kanbanBoard.classList.add('d-none');
+      analyticsView.classList.add('d-none');
+      filterBar.classList.remove('d-none');
+      mobileTaskList.innerHTML = '';
+      selectedIds.clear();
+    } else {
+      emptyState.classList.add('d-none');
+      noResultsState.classList.add('d-none');
+      filterBar.classList.remove('d-none');
+
+      if (currentView === 'list') {
+        taskGrid.classList.remove('d-none');
+        kanbanBoard.classList.add('d-none');
+        analyticsView.classList.add('d-none');
+
+        let page = getPage(filteredTasks);
+        taskList.innerHTML = '';
+        for (let i = 0; i < page.length; i++) {
+          taskList.insertAdjacentHTML('beforeend', renderRow(page[i]));
+        }
+
+        mobileTaskList.innerHTML = '';
+        for (let i = 0; i < page.length; i++) {
+          mobileTaskList.insertAdjacentHTML('beforeend', renderMobileCard(page[i]));
+        }
+
+        let start = (currentPage - 1) * pageSize + 1;
+        let end = Math.min(currentPage * pageSize, filteredTasks.length);
+        tableInfo.textContent = 'Showing ' + start + '–' + end + ' of ' + filteredTasks.length + ' tasks';
+
+        let totalPages = Math.ceil(filteredTasks.length / pageSize) || 1;
+        pageInfo.textContent = 'Page ' + currentPage + ' of ' + totalPages;
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage === totalPages;
+
+        renderPagination(filteredTasks.length);
+      } else if (currentView === 'kanban') {
+        taskGrid.classList.add('d-none');
+        kanbanBoard.classList.remove('d-none');
+        analyticsView.classList.add('d-none');
+        renderKanban(filteredTasks);
+      } else if (currentView === 'analytics') {
+        taskGrid.classList.add('d-none');
+        kanbanBoard.classList.add('d-none');
+        analyticsView.classList.remove('d-none');
+        renderAnalytics(allTasks);
+      }
+    }
+
+    updateSortIndicators();
+    updateBulkActions();
+    updateDashboardHealth(allTasks);
+  }
+
+  function createToastShell(type) {
+    const el = document.createElement('div');
+    el.className = 'toast align-items-center border-0 text-bg-' + type;
+    el.setAttribute('role', 'alert');
+    el.setAttribute('aria-live', 'assertive');
+    el.setAttribute('aria-atomic', 'true');
+    const flexDiv = document.createElement('div');
+    flexDiv.className = 'd-flex align-items-center p-2';
+    el.appendChild(flexDiv);
+    return { el: el, flexDiv: flexDiv };
+  }
+
+  function mountToast(el, delay) {
+    toastContainer.appendChild(el);
+    const toast = new bootstrap.Toast(el, { autohide: true, delay: delay });
+    toast.show();
+    el.addEventListener('hidden.bs.toast', function () { el.remove(); });
+    return toast;
+  }
+
+  function showToast(message, type) {
+    type = type || 'success';
+    const shell = createToastShell(type);
+    const icon = toastIcons[type] || toastIcons.success;
+    const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    iconSvg.setAttribute('width', '20');
+    iconSvg.setAttribute('height', '20');
+    iconSvg.setAttribute('fill', 'currentColor');
+    iconSvg.setAttribute('class', 'me-2 flex-shrink-0');
+    iconSvg.setAttribute('viewBox', '0 0 16 16');
+    iconSvg.innerHTML = icon;
+    shell.flexDiv.appendChild(iconSvg);
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'toast-body';
+    bodyDiv.textContent = message;
+    shell.flexDiv.appendChild(bodyDiv);
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'btn-close btn-close-white me-2 m-auto';
+    closeBtn.setAttribute('data-bs-dismiss', 'toast');
+    shell.flexDiv.appendChild(closeBtn);
+    const progress = document.createElement('div');
+    progress.className = 'toast-progress';
+    shell.el.appendChild(progress);
+    mountToast(shell.el, 3000);
+  }
+
+  function showUndoDeleteToast(taskName) {
+    const shell = createToastShell('danger');
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'toast-body';
+    bodyDiv.textContent = 'Deleted "' + taskName + '"';
+    shell.flexDiv.appendChild(bodyDiv);
+    const undoBtn = document.createElement('button');
+    undoBtn.type = 'button';
+    undoBtn.className = 'btn btn-sm btn-light me-2';
+    undoBtn.textContent = 'Undo';
+    undoBtn.addEventListener('click', function () {
+      if (lastDeleted) {
+        const tasks = loadTasks();
+        tasks.unshift(lastDeleted);
+        saveTasks(tasks);
+        lastDeleted = null;
+        if (undoTimeout) { clearTimeout(undoTimeout); undoTimeout = null; }
+        toast.hide();
+        currentPage = 1;
+        refresh();
+        showToast('Task restored!', 'success');
+      }
+    });
+    shell.flexDiv.appendChild(undoBtn);
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'btn-close btn-close-white me-2 m-auto';
+    closeBtn.setAttribute('data-bs-dismiss', 'toast');
+    shell.flexDiv.appendChild(closeBtn);
+    const toast = mountToast(shell.el, 5000);
+  }
+
+  // Subtask Checklist Builder in Form Modal
+  function renderSubtaskBuilder() {
+    if (!subtaskBuilderList) return;
+    if (tempSubtasks.length === 0) {
+      subtaskBuilderList.innerHTML = '<span class="text-muted small">No subtasks added yet.</span>';
+      return;
+    }
+    subtaskBuilderList.innerHTML = tempSubtasks.map(function (st, idx) {
+      return '<div class="subtask-builder-item">' +
+        '<span>' + escapeHtml(st.text) + '</span>' +
+        '<button type="button" class="subtask-delete-btn" data-idx="' + idx + '" title="Remove subtask">&times;</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  if (addSubtaskBtn && newSubtaskInput) {
+    addSubtaskBtn.addEventListener('click', function () {
+      const text = newSubtaskInput.value.trim();
+      if (!text) return;
+      tempSubtasks.push({ id: generateID(), text: text, completed: false });
+      newSubtaskInput.value = '';
+      renderSubtaskBuilder();
+    });
+
+    newSubtaskInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addSubtaskBtn.click();
+      }
+    });
+  }
+
+  if (subtaskBuilderList) {
+    subtaskBuilderList.addEventListener('click', function (e) {
+      const btn = e.target.closest('.subtask-delete-btn');
+      if (!btn) return;
+      const idx = parseInt(btn.dataset.idx, 10);
+      if (!isNaN(idx)) {
+        tempSubtasks.splice(idx, 1);
+        renderSubtaskBuilder();
+      }
+    });
+  }
+
+  // Form Management
+  function setFormLoading(loading) {
+    saveBtn.disabled = loading;
+    saveBtn.innerHTML = loading
+      ? '<span class="spinner-border spinner-border-sm me-1"></span> Saving...'
+      : (editId ? 'Update Task' : 'Save Task');
+  }
+
+  function resetForm() {
+    form.reset();
+    form.classList.remove('was-validated');
+    fieldName.classList.remove('is-invalid');
+    editId = null;
+    tempSubtasks = [];
+    renderSubtaskBuilder();
+    modalTitle.textContent = 'Add New Task';
+    setFormLoading(false);
+  }
+
+  function parseTags(str) {
+    if (!str) return [];
+    const out = [];
+    const seen = new Set();
+    String(str).split(/[;,]/).forEach(function (part) {
+      const t = part.trim();
+      if (t && !seen.has(t.toLowerCase())) {
+        seen.add(t.toLowerCase());
+        out.push(t);
+      }
+    });
+    return out;
+  }
+
+  function getFormData() {
+    return {
+      id: editId,
+      name: fieldName.value.trim(),
+      description: fieldDesc.value.trim(),
+      tags: parseTags(fieldTags.value),
+      priority: fieldPriority.value,
+      status: fieldStatus.value,
+      dueDate: fieldDueDate.value,
+      blockedBy: fieldBlockedBy.value.trim(),
+      timeSpent: parseInt(fieldTimeSpent.value, 10) || 0,
+      subtasks: tempSubtasks
+    };
+  }
+
+  function setFormData(task) {
+    fieldName.value = task.name || '';
+    fieldDesc.value = task.description || '';
+    fieldTags.value = (task.tags || []).join(', ');
+    fieldPriority.value = task.priority || 'Medium';
+    fieldStatus.value = task.status || 'Pending';
+    fieldDueDate.value = task.dueDate || '';
+    fieldBlockedBy.value = task.blockedBy || '';
+    fieldTimeSpent.value = task.timeSpent || 0;
+    tempSubtasks = Array.isArray(task.subtasks) ? JSON.parse(JSON.stringify(task.subtasks)) : [];
+    renderSubtaskBuilder();
+  }
+
+  function validateForm() {
+    if (!fieldName.value.trim()) {
+      fieldName.classList.add('is-invalid');
+      fieldName.classList.add('shake');
+      setTimeout(function () { fieldName.classList.remove('shake'); }, 400);
+      return false;
+    }
+    fieldName.classList.remove('is-invalid');
+    return true;
+  }
+
+  function openForm(taskData, defaultStatus) {
+    if (taskData) {
+      editId = taskData.id;
+      setFormData(taskData);
+      modalTitle.textContent = 'Edit Task';
+      setFormLoading(false);
+    } else {
+      resetForm();
+      if (defaultStatus) {
+        fieldStatus.value = defaultStatus;
+      }
+    }
+    taskModal.show();
+  }
+
+  function closeForm() {
+    taskModal.hide();
+  }
+
+  function handleSave(data) {
+    if (data.id) {
+      const tasks = loadTasks();
+      const nameKey = data.name.trim().toLowerCase();
+      if (tasks.some(function (t) { return t.id !== data.id && t.name.trim().toLowerCase() === nameKey; })) {
+        showToast('A task with this name already exists.', 'warning');
+        setFormLoading(false);
+        return;
+      }
+      if (!updateTask(data.id, data)) {
+        showToast('Failed to update task.', 'danger');
+        setFormLoading(false);
+        return;
+      }
+      showToast('Task updated!', 'success');
+    } else {
+      if (!addTask(data)) {
+        showToast('A task with this name already exists.', 'warning');
+        setFormLoading(false);
+        return;
+      }
+      showToast('Task added!', 'success');
+    }
+    closeForm();
+    currentPage = 1;
+    refresh();
+  }
+
+  saveBtn.addEventListener('click', function () {
+    if (!validateForm()) return;
+    setFormLoading(true);
+    handleSave(getFormData());
+  });
+
+  form.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.target.id !== 'newSubtaskInput') {
+      e.preventDefault();
+      if (!validateForm()) return;
+      setFormLoading(true);
+      handleSave(getFormData());
+    }
+  });
+
+  // Task Detail Modal Controller
+  function openTaskDetail(taskId) {
+    const task = loadTasks().find(function (t) { return t.id === taskId; });
+    if (!task) return;
+    detailTaskId = task.id;
+
+    detailTitle.textContent = task.name;
+    detailPriorityPill.className = 'pill ' + (priorityClass[task.priority] || 'pill-low');
+    detailPriorityPill.textContent = task.priority;
+    detailStatusPill.className = 'pill ' + (statusClass[task.status] || 'pill-pending');
+    detailStatusPill.textContent = task.status;
+
+    const due = getDueDateInfo(task);
+    if (due.label) {
+      detailDueBadge.classList.remove('d-none');
+      detailDueBadge.textContent = due.label;
+    } else {
+      detailDueBadge.classList.add('d-none');
+    }
+
+    detailDescription.innerHTML = parseMarkdown(task.description);
+    detailDueDate.textContent = task.dueDate ? formatDate(task.dueDate) : '—';
+    const hours = Math.floor((task.timeSpent || 0) / 60);
+    const mins = (task.timeSpent || 0) % 60;
+    detailTimeSpent.textContent = (hours > 0 ? hours + 'h ' : '') + mins + 'm';
+    detailCreatedAt.textContent = formatDateTime(task.createdAt);
+    detailBlockedBy.textContent = task.blockedBy || 'None';
+    detailTags.innerHTML = tagChipsHtml(task.tags);
+
+    // Interactive Subtasks list inside Details
+    renderDetailSubtasks(task);
+
+    // History Timeline
+    if (Array.isArray(task.history) && task.history.length > 0) {
+      detailHistoryList.innerHTML = task.history.map(function (h) {
+        return '<div class="history-item">' +
+          '<span class="history-dot"></span>' +
+          '<span class="fw-semibold">' + escapeHtml(h.action) + '</span>' +
+          '<span class="text-muted ms-auto">' + formatDateTime(h.timestamp) + '</span>' +
+        '</div>';
+      }).join('');
+    } else {
+      detailHistoryList.innerHTML = '<span class="text-muted small">No history recorded yet.</span>';
+    }
+
+    taskDetailModal.show();
+  }
+
+  function renderDetailSubtasks(task) {
+    const subtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
+    if (subtasks.length === 0) {
+      detailSubtasksSection.classList.add('d-none');
+      return;
+    }
+    detailSubtasksSection.classList.remove('d-none');
+    const stats = getSubtaskStats(subtasks);
+    detailSubtasksProgressText.textContent = stats.completed + '/' + stats.total + ' completed';
+    detailSubtasksProgressBar.style.width = stats.pct + '%';
+
+    detailSubtasksList.innerHTML = subtasks.map(function (st) {
+      return '<div class="detail-subtask-item' + (st.completed ? ' is-completed' : '') + '">' +
+        '<input type="checkbox" class="form-check-input detail-st-checkbox" data-task-id="' + escapeHtml(task.id) + '" data-st-id="' + escapeHtml(st.id) + '"' + (st.completed ? ' checked' : '') + '>' +
+        '<span>' + escapeHtml(st.text) + '</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  if (detailSubtasksList) {
+    detailSubtasksList.addEventListener('change', function (e) {
+      if (e.target.classList.contains('detail-st-checkbox')) {
+        const taskId = e.target.dataset.taskId;
+        const stId = e.target.dataset.stId;
+        const checked = e.target.checked;
+        const tasks = loadTasks();
+        const t = tasks.find(function (task) { return task.id === taskId; });
+        if (t && Array.isArray(t.subtasks)) {
+          const st = t.subtasks.find(function (sub) { return sub.id === stId; });
+          if (st) {
+            st.completed = checked;
+            saveTasks(tasks);
+            renderDetailSubtasks(t);
+            refresh();
+          }
+        }
+      }
+    });
+  }
+
+  if (copyBranchBtn) {
+    copyBranchBtn.addEventListener('click', function () {
+      if (!detailTaskId) return;
+      const task = loadTasks().find(function (t) { return t.id === detailTaskId; });
+      if (!task) return;
+      const branchName = 'feature/' + slugify(task.name);
+      navigator.clipboard.writeText(branchName).then(function () {
+        showToast('Copied branch name: ' + branchName, 'info');
+      }).catch(function () {
+        showToast('Branch name: ' + branchName, 'info');
+      });
+    });
+  }
+
+  if (copyCommitBtn) {
+    copyCommitBtn.addEventListener('click', function () {
+      if (!detailTaskId) return;
+      const task = loadTasks().find(function (t) { return t.id === detailTaskId; });
+      if (!task) return;
+      const isBug = (task.tags || []).some(function (tag) { return /bug|fix/i.test(tag); });
+      const prefix = isBug ? 'fix: ' : 'feat: ';
+      const commitMsg = prefix + task.name;
+      navigator.clipboard.writeText(commitMsg).then(function () {
+        showToast('Copied commit message: ' + commitMsg, 'info');
+      }).catch(function () {
+        showToast('Commit message: ' + commitMsg, 'info');
+      });
+    });
+  }
+
+  if (detailFocusTimerBtn) {
+    detailFocusTimerBtn.addEventListener('click', function () {
+      if (!detailTaskId) return;
+      const task = loadTasks().find(function (t) { return t.id === detailTaskId; });
+      if (task) {
+        startFocusTimerForTask(task.id);
+        taskDetailModal.hide();
+      }
+    });
+  }
+
+  if (detailEditBtn) {
+    detailEditBtn.addEventListener('click', function () {
+      if (!detailTaskId) return;
+      const task = loadTasks().find(function (t) { return t.id === detailTaskId; });
+      taskDetailModal.hide();
+      if (task) openForm(task);
+    });
+  }
+
+  // Quick Inline Status & Priority Toggle Handlers
+  function cycleStatus(current) {
+    if (current === 'Pending') return 'In Progress';
+    if (current === 'In Progress') return 'Completed';
+    return 'Pending';
+  }
+
+  function cyclePriority(current) {
+    if (current === 'Low') return 'Medium';
+    if (current === 'Medium') return 'High';
+    return 'Low';
+  }
+
+  // Global Task Actions Handler (Table, Cards, Kanban)
+  function handleTaskAction(e) {
+    const item = e.target.closest('[data-action]');
+    if (!item) return;
+    const id = item.dataset.id;
+    const action = item.dataset.action;
+
+    if (action === 'view') {
+      openTaskDetail(id);
+    }
+    if (action === 'edit') {
+      const task = loadTasks().find(function (t) { return t.id === id; });
+      if (task) openForm(task);
+    }
+    if (action === 'timer') {
+      startFocusTimerForTask(id);
+    }
+    if (action === 'toggle-status') {
+      const task = loadTasks().find(function (t) { return t.id === id; });
+      if (task) {
+        const next = cycleStatus(task.status);
+        updateTask(id, { status: next });
+        showToast('Updated status to ' + next, 'success');
+        refresh();
+      }
+    }
+    if (action === 'toggle-priority') {
+      const task = loadTasks().find(function (t) { return t.id === id; });
+      if (task) {
+        const next = cyclePriority(task.priority);
+        updateTask(id, { priority: next });
+        showToast('Updated priority to ' + next, 'info');
+        refresh();
+      }
+    }
+    if (action === 'delete') {
+      confirmThen('Delete Task', 'Are you sure you want to delete this task?', function () {
+        const tasks = loadTasks();
+        const task = tasks.find(function (t) { return t.id === id; });
+        if (task) {
+          lastDeleted = task;
+          if (undoTimeout) clearTimeout(undoTimeout);
+          undoTimeout = setTimeout(function () { lastDeleted = null; }, 5000);
+        }
+        deleteTask(id);
+        confirmModal.hide();
+        showUndoDeleteToast(task ? task.name : 'Task');
+        currentPage = 1;
+        refresh();
+      }, 'danger');
+    }
+    if (action === 'copy') {
+      confirmThen('Duplicate Task', 'Create a copy of this task?', function () {
+        duplicateTask(id);
+        confirmModal.hide();
+        showToast('Task duplicated!', 'info');
+        currentPage = 1;
+        refresh();
+      }, 'info');
+    }
+  }
+
+  taskList.addEventListener('click', handleTaskAction);
+  mobileTaskList.addEventListener('click', handleTaskAction);
+  kanbanBoard.addEventListener('click', handleTaskAction);
+
+  // Quick Add button on Kanban column headers
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.kanban-add-btn');
+    if (!btn) return;
+    const defaultStatus = btn.dataset.addStatus || 'Pending';
+    openForm(null, defaultStatus);
+  });
+
+  // Focus / Pomodoro Timer Engine
+  function updateTimerDisplay() {
+    const m = Math.floor(timerRemaining / 60);
+    const s = timerRemaining % 60;
+    timerDisplay.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+
+  function startFocusTimerForTask(taskId) {
+    timerActiveTaskId = taskId;
+    timerRemaining = timerDuration;
+    timerIsRunning = true;
+    focusTimerWidget.classList.add('is-running');
+    timerToggleIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+    updateTimerDisplay();
+
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(tickTimer, 1000);
+
+    const task = loadTasks().find(function (t) { return t.id === taskId; });
+    showToast('Focus timer started for "' + (task ? task.name : 'Task') + '" (25m)', 'info');
+  }
+
+  function tickTimer() {
+    if (timerRemaining > 0) {
+      timerRemaining--;
+      updateTimerDisplay();
+    } else {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timerIsRunning = false;
+      focusTimerWidget.classList.remove('is-running');
+      timerToggleIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+
+      playTimerAlertSound();
+      showToast('🎉 Focus session completed! Great job.', 'success');
+
+      if (timerActiveTaskId) {
+        const tasks = loadTasks();
+        const t = tasks.find(function (task) { return task.id === timerActiveTaskId; });
+        if (t) {
+          t.timeSpent = (parseInt(t.timeSpent, 10) || 0) + 25;
+          if (!Array.isArray(t.history)) t.history = [];
+          t.history.unshift({ action: 'Logged 25 mins focus session', timestamp: new Date().toISOString() });
+          saveTasks(tasks);
+          refresh();
+        }
+      }
+    }
+  }
+
+  function toggleTimer() {
+    if (timerIsRunning) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timerIsRunning = false;
+      focusTimerWidget.classList.remove('is-running');
+      timerToggleIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+      showToast('Timer paused', 'info');
+    } else {
+      if (timerRemaining <= 0) timerRemaining = timerDuration;
+      timerIsRunning = true;
+      focusTimerWidget.classList.add('is-running');
+      timerToggleIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(tickTimer, 1000);
+    }
+  }
+
+  function resetTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = null;
+    timerIsRunning = false;
+    timerRemaining = timerDuration;
+    focusTimerWidget.classList.remove('is-running');
+    timerToggleIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+    updateTimerDisplay();
+  }
+
+  if (timerToggleBtn) timerToggleBtn.addEventListener('click', toggleTimer);
+  if (timerResetBtn) timerResetBtn.addEventListener('click', resetTimer);
+
+  // Daily Standup Generator
+  function generateStandupReport() {
+    const tasks = loadTasks();
+    const today = localDateStr(new Date());
+
+    const completed = tasks.filter(function (t) { return t.status === 'Completed'; });
+    const inProgress = tasks.filter(function (t) { return t.status === 'In Progress'; });
+    const pending = tasks.filter(function (t) { return t.status === 'Pending'; });
+    const blockedOrOverdue = tasks.filter(function (t) {
+      return t.blockedBy || (t.dueDate && t.dueDate < today && t.status !== 'Completed');
+    });
+
+    let report = '### 🎯 Daily Standup - ' + today + '\n\n';
+
+    report += '#### ✅ Completed Recently\n';
+    if (completed.length === 0) report += '- None yet\n';
+    else completed.slice(0, 8).forEach(function (t) { report += '- ' + t.name + '\n'; });
+
+    report += '\n#### ⏳ Working On Today (In Progress)\n';
+    if (inProgress.length === 0) report += '- None in progress\n';
+    else inProgress.forEach(function (t) { report += '- ' + t.name + (t.priority === 'High' ? ' [HIGH PRIORITY]' : '') + '\n'; });
+
+    report += '\n#### 📋 Pending / Backlog\n';
+    if (pending.length === 0) report += '- Backlog clean\n';
+    else pending.slice(0, 5).forEach(function (t) { report += '- ' + t.name + '\n'; });
+
+    if (blockedOrOverdue.length > 0) {
+      report += '\n#### ⚠️ Blockers & Overdue Items\n';
+      blockedOrOverdue.forEach(function (t) {
+        const reason = t.blockedBy ? 'Blocked by: ' + t.blockedBy : 'Overdue (' + t.dueDate + ')';
+        report += '- ' + t.name + ' (' + reason + ')\n';
+      });
+    }
+
+    standupTextarea.value = report;
+    standupModal.show();
+  }
+
+  if (copyStandupBtn) {
+    copyStandupBtn.addEventListener('click', function () {
+      standupTextarea.select();
+      navigator.clipboard.writeText(standupTextarea.value).then(function () {
+        showToast('Standup summary copied to clipboard!', 'success');
+      }).catch(function () {
+        showToast('Standup text ready to copy', 'info');
+      });
+    });
+  }
+
+  if (sidebarStandupBtn) {
+    sidebarStandupBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      generateStandupReport();
+    });
+  }
+
+  if (sidebarShortcutsBtn) {
+    sidebarShortcutsBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      shortcutsModal.show();
+    });
+  }
+
+  // Command Palette Engine (Ctrl+K)
+  function buildCommandPaletteItems(query) {
+    const q = (query || '').toLowerCase().trim();
+    const tasks = loadTasks();
+    const items = [];
+
+    // Views
+    items.push({ category: 'Views', title: 'Switch to List View', icon: '📋', action: function () { switchView('list'); } });
+    items.push({ category: 'Views', title: 'Switch to Kanban Board', icon: '📊', action: function () { switchView('kanban'); } });
+    items.push({ category: 'Views', title: 'Switch to Metrics / Analytics', icon: '📈', action: function () { switchView('analytics'); } });
+
+    // Actions
+    items.push({ category: 'Actions', title: 'Add New Task', icon: '➕', kbd: 'N', action: function () { openForm(); } });
+    items.push({ category: 'Actions', title: 'Generate Daily Standup Summary', icon: '📝', kbd: 'S', action: generateStandupReport });
+    items.push({ category: 'Actions', title: 'Toggle Dark / Light Theme', icon: '🌓', kbd: 'T', action: toggleTheme });
+    items.push({ category: 'Actions', title: 'Start / Pause Focus Timer', icon: '⏱️', action: toggleTimer });
+    items.push({ category: 'Actions', title: 'Export Backup as JSON', icon: '💾', action: exportToJson });
+    items.push({ category: 'Actions', title: 'Export Spreadsheet as Excel (.xlsx)', icon: '📗', action: exportToExcel });
+    items.push({ category: 'Actions', title: 'Export Sprint Checklist as Markdown (.md)', icon: '📄', action: exportToMarkdown });
+    items.push({ category: 'Actions', title: 'Clear All Active Filters', icon: '🧹', action: function () { resetFilters(); refresh(); } });
+
+    // Filter shortcuts
+    items.push({ category: 'Filter Presets', title: 'Show High Priority Tasks', icon: '🔴', action: function () { filterPriority.value = 'High'; refresh(); } });
+    items.push({ category: 'Filter Presets', title: 'Show In Progress Tasks', icon: '🔵', action: function () { filterStatus.value = 'In Progress'; refresh(); } });
+    items.push({ category: 'Filter Presets', title: 'Show Completed Tasks', icon: '🟢', action: function () { filterStatus.value = 'Completed'; refresh(); } });
+
+    // Task items matching query
+    tasks.forEach(function (t) {
+      items.push({
+        category: 'Tasks',
+        title: t.name,
+        icon: t.status === 'Completed' ? '✅' : (t.status === 'In Progress' ? '⏳' : '📋'),
+        meta: t.priority + ' • ' + t.status,
+        action: function () { openTaskDetail(t.id); }
+      });
+    });
+
+    if (!q) return items;
+
+    return items.filter(function (it) {
+      return it.title.toLowerCase().includes(q) || it.category.toLowerCase().includes(q) || (it.meta && it.meta.toLowerCase().includes(q));
+    });
+  }
+
+  function renderCommandPaletteResults(items) {
+    cmdPaletteItems = items;
+    if (items.length === 0) {
+      cmdPaletteResults.innerHTML = '<div class="p-3 text-center text-muted small">No commands or tasks found</div>';
+      return;
+    }
+    if (cmdPaletteActiveIndex >= items.length) cmdPaletteActiveIndex = 0;
+
+    let currentCat = '';
+    let html = '';
+
+    items.forEach(function (it, idx) {
+      if (it.category !== currentCat) {
+        currentCat = it.category;
+        html += '<div class="cmd-palette-section-title">' + escapeHtml(currentCat) + '</div>';
+      }
+      const activeCls = idx === cmdPaletteActiveIndex ? ' active' : '';
+      html += '<div class="cmd-palette-item' + activeCls + '" data-cmd-idx="' + idx + '">' +
+        '<div class="cmd-palette-item-left">' +
+          '<span class="me-1">' + it.icon + '</span>' +
+          '<span class="fw-medium">' + escapeHtml(it.title) + '</span>' +
+          (it.meta ? '<small class="text-muted ms-2">(' + escapeHtml(it.meta) + ')</small>' : '') +
+        '</div>' +
+        (it.kbd ? '<kbd>' + escapeHtml(it.kbd) + '</kbd>' : '') +
+      '</div>';
+    });
+
+    cmdPaletteResults.innerHTML = html;
+  }
+
+  function openCommandPalette() {
+    cmdPaletteInput.value = '';
+    cmdPaletteActiveIndex = 0;
+    renderCommandPaletteResults(buildCommandPaletteItems(''));
+    commandPaletteModal.show();
+  }
+
+  if (cmdPaletteBtn) cmdPaletteBtn.addEventListener('click', openCommandPalette);
+
+  if (cmdPaletteInput) {
+    cmdPaletteInput.addEventListener('input', function () {
+      cmdPaletteActiveIndex = 0;
+      renderCommandPaletteResults(buildCommandPaletteItems(this.value));
+    });
+
+    cmdPaletteInput.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (cmdPaletteItems.length > 0) {
+          cmdPaletteActiveIndex = (cmdPaletteActiveIndex + 1) % cmdPaletteItems.length;
+          renderCommandPaletteResults(cmdPaletteItems);
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (cmdPaletteItems.length > 0) {
+          cmdPaletteActiveIndex = (cmdPaletteActiveIndex - 1 + cmdPaletteItems.length) % cmdPaletteItems.length;
+          renderCommandPaletteResults(cmdPaletteItems);
+        }
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (cmdPaletteItems[cmdPaletteActiveIndex]) {
+          commandPaletteModal.hide();
+          cmdPaletteItems[cmdPaletteActiveIndex].action();
+        }
+      }
+    });
+  }
+
+  if (cmdPaletteResults) {
+    cmdPaletteResults.addEventListener('click', function (e) {
+      const itemEl = e.target.closest('.cmd-palette-item');
+      if (!itemEl) return;
+      const idx = parseInt(itemEl.dataset.cmdIdx, 10);
+      if (cmdPaletteItems[idx]) {
+        commandPaletteModal.hide();
+        cmdPaletteItems[idx].action();
+      }
+    });
+  }
+
+  // Confirmation Modal Helper
+  function confirmThen(title, body, action, iconType) {
+    iconType = iconType || 'danger';
+    confirmTitle.textContent = title;
+    confirmBody.textContent = body;
+    confirmIcon.innerHTML = confirmIcons[iconType] || confirmIcons.danger;
+    confirmIcon.className = 'confirm-icon confirm-icon-' + iconType + ' mx-auto d-flex';
+    confirmBtn.className = 'btn btn-sm btn-' + (iconType === 'info' ? 'primary' : (iconType === 'warning' ? 'warning text-dark' : 'danger'));
+    confirmSpinner.classList.add('d-none');
+    confirmBtnText.textContent = 'Confirm';
+    confirmBtn.disabled = false;
+    confirmBtn.onclick = function () {
+      confirmBtn.disabled = true;
+      confirmSpinner.classList.remove('d-none');
+      action();
+    };
+    confirmModal.show();
+  }
+
+  confirmModalEl.addEventListener('hidden.bs.modal', function () {
+    confirmBtn.disabled = false;
+    confirmSpinner.classList.add('d-none');
+    confirmBtnText.textContent = 'Confirm';
+  });
+
+  // Tag Filtering row
+  function populateTagFilter(allTasks) {
+    if (!tagFilter) return;
+    const tags = new Set();
+    allTasks.forEach(function (t) {
+      (t.tags || []).forEach(function (tag) { if (tag) tags.add(tag); });
+    });
+    const sorted = Array.from(tags).sort(function (a, b) {
+      return a.toLowerCase().localeCompare(b.toLowerCase());
+    });
+    if (sorted.length === 0) {
+      tagFilter.innerHTML = '<span class="text-muted small">No tags yet</span>';
+      return;
+    }
+    tagFilter.innerHTML = sorted.map(function (tag) {
+      const active = selectedTags.has(tag) ? ' active' : '';
+      return '<button type="button" class="tag-chip' + active + '" data-tag="' + escapeHtml(tag) + '">#' + escapeHtml(tag) + '</button>';
+    }).join('');
+  }
+
+  if (tagFilter) {
+    tagFilter.addEventListener('click', function (e) {
+      const chip = e.target.closest('.tag-chip');
+      if (!chip) return;
+      const tag = chip.dataset.tag;
+      if (selectedTags.has(tag)) selectedTags.delete(tag);
+      else selectedTags.add(tag);
+      refresh();
+    });
+  }
+
+  function renderActiveFilters() {
+    const el = document.getElementById('activeFilters');
+    if (!el) return;
+    const chips = [];
+    const state = getFilterState();
+    if (state.status) {
+      chips.push({ label: 'Status: ' + state.status, clear: function () { filterStatus.value = ''; } });
+    }
+    if (state.priority) {
+      chips.push({ label: 'Priority: ' + state.priority, clear: function () { filterPriority.value = ''; } });
+    }
+    if (state.dueDateFilter) {
+      chips.push({ label: 'Date: ' + formatDate(state.dueDateFilter), clear: function () { filterDueDate.value = ''; } });
+    }
+    if (selectedTags.size > 0) {
+      chips.push({ label: 'Tags: ' + Array.from(selectedTags).join(', '), clear: function () { selectedTags.clear(); } });
+    }
+    if (chips.length === 0) {
+      el.classList.add('d-none');
+      el.innerHTML = '';
+      return;
+    }
+    el.classList.remove('d-none');
+    el.innerHTML = chips.map(function (c, idx) {
+      return '<span class="filter-chip">' + escapeHtml(c.label) +
+        '<button type="button" aria-label="Remove filter" data-idx="' + idx + '">' +
+        '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>' +
+        '</button></span>';
+    }).join('');
+    el._chips = chips;
+  }
+
+  if (document.getElementById('activeFilters')) {
+    document.getElementById('activeFilters').addEventListener('click', function (e) {
+      const btn = e.target.closest('button[data-idx]');
+      if (!btn) return;
+      const chips = this._chips || [];
+      const chip = chips[parseInt(btn.dataset.idx, 10)];
+      if (chip) { chip.clear(); selectedIds.clear(); currentPage = 1; refresh(); }
+    });
+  }
+
+  // Sidebar navigation routing
+  if (sidebarNav) {
+    sidebarNav.addEventListener('click', function (e) {
+      const item = e.target.closest('.nav-item');
+      if (!item) return;
+      const nav = item.dataset.nav;
+      if (!nav) return;
+      e.preventDefault();
+
+      if (nav === 'kanban') {
+        switchView('kanban');
+      } else if (nav === 'analytics') {
+        switchView('analytics');
+      } else {
+        switchView('list');
+        filterStatus.value = nav === 'all' ? '' : nav;
+      }
+      selectedIds.clear();
+      currentPage = 1;
+      refresh();
+    });
+  }
+
+  function updateSidebarNavigation() {
+    if (!sidebarNav) return;
+    const currentStatus = filterStatus.value;
+    sidebarNav.querySelectorAll('.nav-item[data-nav]').forEach(function (item) {
+      const nav = item.dataset.nav;
+      if (currentView === 'kanban') {
+        item.classList.toggle('active', nav === 'kanban');
+      } else if (currentView === 'analytics') {
+        item.classList.toggle('active', nav === 'analytics');
+      } else {
+        const active = (nav === 'all' && !currentStatus) || (nav === currentStatus);
+        item.classList.toggle('active', active);
+      }
+    });
+  }
+
+  function refresh() {
+    let all = loadTasks();
+    let filtered = applyFilters(all);
+    populateTagFilter(all);
+    renderActiveFilters();
+    updateSidebarNavigation();
+    render(all, filtered);
+  }
+
+  // View switchers event listeners
+  viewListBtn.addEventListener('click', function () { switchView('list'); });
+  viewBoardBtn.addEventListener('click', function () { switchView('kanban'); });
+  viewAnalyticsBtn.addEventListener('click', function () { switchView('analytics'); });
+
+  // Table Column Sort Click Handlers
+  document.addEventListener('click', function (e) {
+    const th = e.target.closest('.sortable-header');
+    if (!th) return;
+    const field = th.dataset.sort;
+    const currentVal = sortBySelect.value || 'createdAt-desc';
+    const parts = currentVal.split('-');
+    const currentField = parts[0];
+    const currentDir = parts[1];
+
+    let nextDir = 'asc';
+    if (currentField === field && currentDir === 'asc') nextDir = 'desc';
+
+    sortBySelect.value = field + '-' + nextDir;
+    refresh();
+  });
+
+  // Page Size Selector
+  pageSizeSelect.addEventListener('change', function () {
+    pageSize = parseInt(this.value, 10) || 10;
+    currentPage = 1;
+    refresh();
+  });
+
+  // Pagination List Click
+  paginationList.addEventListener('click', function (e) {
+    let link = e.target.closest('a.page-link');
+    if (!link) return;
+    e.preventDefault();
+    let page = link.dataset.page;
+    if (page === 'prev') { if (currentPage > 1) currentPage--; }
+    else if (page === 'next') { currentPage++; }
+    else { currentPage = parseInt(page, 10); }
+    let all = loadTasks();
+    let filtered = applyFilters(all);
+    render(all, filtered);
+  });
+
+  prevPageBtn.addEventListener('click', function () {
+    if (currentPage > 1) { currentPage--; refresh(); }
+  });
+
+  nextPageBtn.addEventListener('click', function () {
+    let all = loadTasks();
+    let filtered = applyFilters(all);
+    let totalPages = Math.ceil(filtered.length / pageSize) || 1;
+    if (currentPage < totalPages) { currentPage++; refresh(); }
+  });
+
+  let searchTimer;
+  searchInput.addEventListener('input', function () { clearTimeout(searchTimer); searchTimer = setTimeout(refresh, 200); });
+  filterStatus.addEventListener('change', function () { selectedIds.clear(); refresh(); });
+  filterPriority.addEventListener('change', function () { selectedIds.clear(); refresh(); });
+  filterDueDate.addEventListener('change', function () { selectedIds.clear(); refresh(); });
+  sortBySelect.addEventListener('change', function () { refresh(); });
+  clearBtn.addEventListener('click', function () { resetFilters(); selectedIds.clear(); currentPage = 1; refresh(); });
+
+  if (clearFiltersFromEmpty) {
+    clearFiltersFromEmpty.addEventListener('click', function () { resetFilters(); selectedIds.clear(); currentPage = 1; refresh(); });
+  }
+
+  // Checkbox delegation for bulk selection
+  document.addEventListener('change', function (e) {
+    if (e.target.classList.contains('task-checkbox')) {
+      const id = e.target.dataset.id;
+      if (!id) return;
+      if (e.target.checked) { selectedIds.add(id); }
+      else { selectedIds.delete(id); }
+      updateBulkActions();
+    }
+  });
+
+  function syncSelectAll(checked) {
+    document.querySelectorAll('.task-checkbox').forEach(function (cb) {
+      if (cb.dataset.id) cb.checked = checked;
+    });
+    selectedIds.clear();
+    if (checked) {
+      document.querySelectorAll('.task-checkbox').forEach(function (cb) {
+        if (cb.dataset.id) selectedIds.add(cb.dataset.id);
+      });
+    }
+    updateBulkActions();
+  }
+
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', function () { syncSelectAll(this.checked); });
+  }
+  if (selectAllCheckboxHeader) {
+    selectAllCheckboxHeader.addEventListener('change', function () {
+      if (selectAllCheckbox) selectAllCheckbox.checked = this.checked;
+      syncSelectAll(this.checked);
+    });
+  }
+
+  // Bulk actions
+  bulkDeleteBtn.addEventListener('click', function () {
+    if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
+    confirmThen('Delete ' + count + ' Task' + (count > 1 ? 's' : ''), 'Are you sure you want to delete ' + count + ' selected task' + (count > 1 ? 's' : '') + '?', function () {
+      const tasks = loadTasks().filter(function (t) { return !selectedIds.has(t.id); });
+      saveTasks(tasks);
+      selectedIds.clear();
+      confirmModal.hide();
+      showUndoDeleteToast('Deleted ' + count + ' tasks');
+      currentPage = 1;
+      refresh();
+    }, 'danger');
+  });
+
+  bulkCompleteBtn.addEventListener('click', function () {
+    if (selectedIds.size === 0) return;
+    const tasks = loadTasks();
+    for (let i = 0; i < tasks.length; i++) {
+      if (selectedIds.has(tasks[i].id)) {
+        tasks[i].status = 'Completed';
+      }
+    }
+    saveTasks(tasks);
+    const count = selectedIds.size;
+    selectedIds.clear();
+    showToast('Marked ' + count + ' task' + (count > 1 ? 's' : '') + ' as Completed.', 'success');
+    refresh();
+  });
+
+  if (bulkInProgressBtn) {
+    bulkInProgressBtn.addEventListener('click', function () {
+      if (selectedIds.size === 0) return;
+      const tasks = loadTasks();
+      for (let i = 0; i < tasks.length; i++) {
+        if (selectedIds.has(tasks[i].id)) {
+          tasks[i].status = 'In Progress';
+        }
+      }
+      saveTasks(tasks);
+      const count = selectedIds.size;
+      selectedIds.clear();
+      showToast('Marked ' + count + ' task' + (count > 1 ? 's' : '') + ' as In Progress.', 'info');
+      refresh();
+    });
+  }
+
+  // Data Export & Import Engines
   function exportToExcel() {
     if (typeof XLSX === 'undefined') {
       showToast('Excel library failed to load. Please refresh.', 'danger');
@@ -274,7 +2080,7 @@
       showToast('No tasks to export.', 'warning');
       return;
     }
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateStr(new Date());
     const fileName = 'tasks_export_' + today + '.xlsx';
 
     function safeStr(val) {
@@ -286,7 +2092,7 @@
 
     requestAnimationFrame(function () {
       const data = [
-        ['Sr No', 'Task Name', 'Description', 'Priority', 'Status', 'Assign Date', 'Tags']
+        ['Sr No', 'Task Name', 'Description', 'Priority', 'Status', 'Assign Date', 'Tags', 'Time Spent (Mins)', 'Subtasks Count']
       ];
       for (let i = 0; i < tasks.length; i++) {
         const t = tasks[i];
@@ -297,7 +2103,9 @@
           t.priority || '',
           t.status || '',
           t.dueDate || '',
-          safeStr((t.tags || []).join(', '))
+          safeStr((t.tags || []).join(', ')),
+          t.timeSpent || 0,
+          (t.subtasks || []).length
         ]);
       }
 
@@ -317,7 +2125,7 @@
       URL.revokeObjectURL(url);
 
       loadingOverlay.classList.add('d-none');
-      showToast('Exported ' + tasks.length + ' tasks!', 'success');
+      showToast('Exported ' + tasks.length + ' tasks to Excel!', 'success');
     });
   }
 
@@ -399,7 +2207,6 @@
           if (!name) continue;
 
           const nameKey = name.trim().toLowerCase();
-
           if (fileNames.has(nameKey)) { skippedFileDup++; continue; }
           fileNames.add(nameKey);
 
@@ -408,6 +2215,7 @@
           if (!validPriorities[priority.toLowerCase()]) priority = 'Medium';
           if (!validStatuses[status.toLowerCase()]) status = 'Pending';
 
+          const now = new Date().toISOString();
           toAdd.push({
             id: generateID(),
             name: name,
@@ -416,7 +2224,12 @@
             priority: priority,
             status: status,
             dueDate: dueDate,
-            createdAt: new Date().toISOString()
+            subtasks: [],
+            timeSpent: 0,
+            blockedBy: '',
+            createdAt: now,
+            updatedAt: now,
+            history: [{ action: 'Imported from Excel', timestamp: now }]
           });
           imported++;
         }
@@ -429,7 +2242,7 @@
         }
 
         if (imported === 0 && totalSkipped > 0) {
-          showToast('No new tasks \u2014 all rows are duplicates.', 'warning');
+          showToast('No new tasks — all rows are duplicates.', 'warning');
           return;
         }
 
@@ -445,689 +2258,150 @@
         showToast(msg, 'success');
         refresh();
       } catch (err) {
-        showToast('Failed to read Excel file. Check the format.', 'danger');
+        showToast('Failed to read Excel file. Check format.', 'danger');
       }
     };
     reader.readAsArrayBuffer(file);
   }
 
-  function actionButtonsHtml(id) {
-    const idAttr = escapeHtml(id);
-    const moreSvg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>';
-    const editSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
-    const copySvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16 1H4a2 2 0 0 0-2 2v12h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zM8 21h11a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1z"/></svg>';
-    const delSvg  = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
-    return '<div class="dropdown task-action-menu">' +
-      '<button class="task-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Task actions">' + moreSvg + '</button>' +
-      '<ul class="dropdown-menu dropdown-menu-end">' +
-        '<li><button class="dropdown-item" data-action="edit" data-id="' + idAttr + '">' + editSvg + 'Edit</button></li>' +
-        '<li><button class="dropdown-item" data-action="copy" data-id="' + idAttr + '">' + copySvg + 'Duplicate</button></li>' +
-        '<li><button class="dropdown-item text-danger" data-action="delete" data-id="' + idAttr + '">' + delSvg + 'Delete</button></li>' +
-      '</ul></div>';
-  }
-
-  function tagChipsHtml(tags) {
-    const list = Array.isArray(tags) ? tags : [];
-    if (list.length === 0) return '<span class="text-muted">\u2014</span>';
-    return list.map(function (t) {
-      return '<span class="task-tag">' + escapeHtml(t) + '</span>';
-    }).join('');
-  }
-
-  function renderRow(task) {
-    const due = getDueDateInfo(task);
-    const isCompleted = task.status === 'Completed';
-    const priorityCls = 'pill ' + (priorityClass[task.priority] || 'pill-low');
-    const statusCls = 'pill ' + (statusClass[task.status] || 'pill-pending');
-    return '<div class="task-row' + (isCompleted ? ' is-completed' : '') + '">' +
-      '<div class="col-check"><input type="checkbox" class="form-check-input task-checkbox" data-id="' + escapeHtml(task.id) + '"' + (selectedIds.has(task.id) ? ' checked' : '') + '></div>' +
-      '<div class="col-name">' +
-        '<div class="task-title ' + due.cls + '">' + escapeHtml(task.name) + (due.label ? '<span class="overdue-badge">' + due.label + '</span>' : '') + '</div>' +
-        (task.description ? '<div class="task-sub">' + escapeHtml(task.description) + '</div>' : '') +
-      '</div>' +
-      '<div class="col-priority"><span class="priority-cell priority-' + escapeHtml(task.priority.toLowerCase()) + '">' + priorityArrow(task.priority) + '<span class="' + priorityCls + '">' + escapeHtml(task.priority) + '</span></span></div>' +
-      '<div class="col-status"><span class="' + statusCls + '">' + escapeHtml(task.status) + '</span></div>' +
-      '<div class="col-tags tag-cell">' + tagChipsHtml(task.tags) + '</div>' +
-      '<div class="col-date">' + (task.dueDate ? formatDate(task.dueDate) : '\u2014') + '</div>' +
-      '<div class="col-actions">' + actionButtonsHtml(task.id) + '</div>' +
-    '</div>';
-  }
-
-  function renderMobileCard(task) {
-    const due = getDueDateInfo(task);
-    const isCompleted = task.status === 'Completed';
-    const priorityCls = 'pill ' + (priorityClass[task.priority] || 'pill-low');
-    const statusCls = 'pill ' + (statusClass[task.status] || 'pill-pending');
-    return '<div class="mobile-task-card' + (isCompleted ? ' is-completed' : '') + '">' +
-      '<div class="mobile-task-card-header">' +
-        '<input type="checkbox" class="form-check-input task-checkbox me-1" data-id="' + escapeHtml(task.id) + '"' + (selectedIds.has(task.id) ? ' checked' : '') + '">' +
-        '<span class="mobile-task-card-name ' + due.cls + '">' + escapeHtml(task.name) + (due.label ? '<span class="overdue-badge">' + due.label + '</span>' : '') + '</span>' +
-      '</div>' +
-      (task.description ? '<div class="mobile-task-card-body"><div class="mobile-task-card-row"><span class="mobile-task-card-label">Description</span><span>' + escapeHtml(task.description) + '</span></div></div>' : '') +
-      '<div class="mobile-task-card-body">' +
-        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Priority</span><span class="' + priorityCls + '">' + escapeHtml(task.priority) + '</span></div>' +
-        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Status</span><span class="' + statusCls + '">' + escapeHtml(task.status) + '</span></div>' +
-        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Tags</span><span>' + tagChipsHtml(task.tags) + '</span></div>' +
-        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Assign Date</span><span>' + (task.dueDate ? formatDate(task.dueDate) : '\u2014') + '</span></div>' +
-      '</div>' +
-      '<div class="mobile-task-card-actions">' + actionButtonsHtml(task.id) + '</div>' +
-    '</div>';
-  }
-
-  function updateStats(tasks) {
-    const total = tasks.length;
-    let inProgress = 0;
-    let completed = 0;
-    let pending = 0;
-
-    for (let i = 0; i < tasks.length; i++) {
-      const t = tasks[i];
-      if (t.status === 'In Progress') inProgress++;
-      if (t.status === 'Completed') completed++;
-      if (t.status === 'Pending') pending++;
-    }
-
-    const cards = document.querySelectorAll('.stat-card h3');
-    if (cards.length >= 4) {
-      cards[0].textContent = total;
-      cards[1].textContent = inProgress;
-      cards[2].textContent = completed;
-      cards[3].textContent = pending;
-    }
-  }
-
-  function getPage(tasks) {
-    let start = (currentPage - 1) * PAGE_SIZE;
-    return tasks.slice(start, start + PAGE_SIZE);
-  }
-
-  function renderPagination(total) {
-    let totalPages = Math.ceil(total / PAGE_SIZE) || 1;
-    if (currentPage > totalPages) currentPage = totalPages;
-    let html = '';
-
-    html += '<li class="page-item' + (currentPage === 1 ? ' disabled' : '') + '"><a class="page-link" href="#" data-page="prev">Previous</a></li>';
-    for (let p = 1; p <= totalPages; p++) {
-      html += '<li class="page-item' + (p === currentPage ? ' active' : '') + '"><a class="page-link" href="#" data-page="' + p + '">' + p + '</a></li>';
-    }
-    html += '<li class="page-item' + (currentPage === totalPages ? ' disabled' : '') + '"><a class="page-link" href="#" data-page="next">Next</a></li>';
-
-    paginationList.innerHTML = html;
-  }
-
-  function updateBulkActions() {
-    const count = selectedIds.size;
-    if (count > 0) {
-      bulkActionBar.classList.remove('d-none');
-      selectedCount.textContent = count + ' selected';
-    } else {
-      bulkActionBar.classList.add('d-none');
-    }
-    const pageBoxes = document.querySelectorAll('#taskList .task-checkbox, #mobileTaskList .task-checkbox');
-    const total = pageBoxes.length;
-    let checkedCount = 0;
-    pageBoxes.forEach(function (cb) { if (cb.checked) checkedCount++; });
-    const allChecked = total > 0 && checkedCount === total;
-    const someChecked = checkedCount > 0 && checkedCount < total;
-    if (selectAllCheckbox) {
-      selectAllCheckbox.checked = allChecked;
-      selectAllCheckbox.indeterminate = someChecked;
-    }
-    if (selectAllCheckboxHeader) {
-      selectAllCheckboxHeader.checked = allChecked;
-      selectAllCheckboxHeader.indeterminate = someChecked;
-    }
-  }
-
-  function setTheme(theme) {
-    if (theme === 'dark') {
-      document.documentElement.dataset.bsTheme = 'dark';
-      document.documentElement.setAttribute('data-theme', 'dark');
-      themeIcon.innerHTML = '<path d="M8 1a7 7 0 0 0 0 14 7 7 0 0 0 0-14z"/>';
-    } else {
-      delete document.documentElement.dataset.bsTheme;
-      document.documentElement.removeAttribute('data-theme');
-      themeIcon.innerHTML = '<path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>';
-    }
-    try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
-  }
-
-  function toggleTheme() {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    setTheme(isDark ? 'light' : 'dark');
-  }
-
-  function render(allTasks, filteredTasks) {
-    let hasTasks = allTasks.length > 0;
-    let hasResults = filteredTasks.length > 0;
-
-    if (!hasTasks) {
-      emptyState.classList.remove('d-none');
-      noResultsState.classList.add('d-none');
-      taskGrid.classList.add('d-none');
-      filterBar.classList.add('d-none');
-      mobileTaskList.innerHTML = '';
-      selectedIds.clear();
-    } else if (!hasResults) {
-      emptyState.classList.add('d-none');
-      noResultsState.classList.remove('d-none');
-      taskGrid.classList.add('d-none');
-      filterBar.classList.remove('d-none');
-      mobileTaskList.innerHTML = '';
-      selectedIds.clear();
-    } else {
-      emptyState.classList.add('d-none');
-      noResultsState.classList.add('d-none');
-      taskGrid.classList.remove('d-none');
-      filterBar.classList.remove('d-none');
-
-      let page = getPage(filteredTasks);
-      taskList.innerHTML = '';
-      for (let i = 0; i < page.length; i++) {
-        taskList.insertAdjacentHTML('beforeend', renderRow(page[i], i));
-      }
-
-      mobileTaskList.innerHTML = '';
-      for (let i = 0; i < page.length; i++) {
-        mobileTaskList.insertAdjacentHTML('beforeend', renderMobileCard(page[i]));
-      }
-
-      let start = (currentPage - 1) * PAGE_SIZE + 1;
-      let end = Math.min(currentPage * PAGE_SIZE, filteredTasks.length);
-      tableInfo.textContent = 'Showing ' + start + '\u2013' + end + ' of ' + filteredTasks.length + ' tasks';
-
-      let totalPages = Math.ceil(filteredTasks.length / PAGE_SIZE) || 1;
-      pageInfo.textContent = 'Page ' + currentPage + ' of ' + totalPages;
-      prevPageBtn.disabled = currentPage === 1;
-      nextPageBtn.disabled = currentPage === totalPages;
-
-      renderPagination(filteredTasks.length);
-    }
-
-    updateBulkActions();
-    updateStats(allTasks);
-  }
-
-  function createToastShell(type) {
-    const el = document.createElement('div');
-    el.className = 'toast align-items-center border-0 text-bg-' + type;
-    el.setAttribute('role', 'alert');
-    el.setAttribute('aria-live', 'assertive');
-    el.setAttribute('aria-atomic', 'true');
-    const flexDiv = document.createElement('div');
-    flexDiv.className = 'd-flex align-items-center p-2';
-    el.appendChild(flexDiv);
-    return { el: el, flexDiv: flexDiv };
-  }
-
-  function mountToast(el, delay) {
-    toastContainer.appendChild(el);
-    const toast = new bootstrap.Toast(el, { autohide: true, delay: delay });
-    toast.show();
-    el.addEventListener('hidden.bs.toast', function () { el.remove(); });
-    return toast;
-  }
-
-  function showToast(message, type) {
-    type = type || 'success';
-    const shell = createToastShell(type);
-    const icon = toastIcons[type] || toastIcons.success;
-    const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    iconSvg.setAttribute('width', '20');
-    iconSvg.setAttribute('height', '20');
-    iconSvg.setAttribute('fill', 'currentColor');
-    iconSvg.setAttribute('class', 'me-2 flex-shrink-0');
-    iconSvg.setAttribute('viewBox', '0 0 16 16');
-    iconSvg.innerHTML = icon;
-    shell.flexDiv.appendChild(iconSvg);
-    const bodyDiv = document.createElement('div');
-    bodyDiv.className = 'toast-body';
-    bodyDiv.textContent = message;
-    shell.flexDiv.appendChild(bodyDiv);
-    const closeBtn = document.createElement('button');
-    closeBtn.type = 'button';
-    closeBtn.className = 'btn-close btn-close-white me-2 m-auto';
-    closeBtn.setAttribute('data-bs-dismiss', 'toast');
-    shell.flexDiv.appendChild(closeBtn);
-    const progress = document.createElement('div');
-    progress.className = 'toast-progress';
-    shell.el.appendChild(progress);
-    mountToast(shell.el, 3000);
-  }
-
-  function showUndoDeleteToast(taskName) {
-    const shell = createToastShell('danger');
-    const bodyDiv = document.createElement('div');
-    bodyDiv.className = 'toast-body';
-    bodyDiv.textContent = 'Deleted "' + taskName + '"';
-    shell.flexDiv.appendChild(bodyDiv);
-    const undoBtn = document.createElement('button');
-    undoBtn.type = 'button';
-    undoBtn.className = 'btn btn-sm btn-light me-2';
-    undoBtn.textContent = 'Undo';
-    undoBtn.addEventListener('click', function () {
-      if (lastDeleted) {
-        const tasks = loadTasks();
-        tasks.push(lastDeleted);
-        saveTasks(tasks);
-        lastDeleted = null;
-        if (undoTimeout) { clearTimeout(undoTimeout); undoTimeout = null; }
-        toast.hide();
-        currentPage = 1;
-        refresh();
-        showToast('Task restored!', 'success');
-      }
-    });
-    shell.flexDiv.appendChild(undoBtn);
-    const closeBtn = document.createElement('button');
-    closeBtn.type = 'button';
-    closeBtn.className = 'btn-close btn-close-white me-2 m-auto';
-    closeBtn.setAttribute('data-bs-dismiss', 'toast');
-    shell.flexDiv.appendChild(closeBtn);
-    const toast = mountToast(shell.el, 5000);
-  }
-
-  function setFormLoading(loading) {
-    saveBtn.disabled = loading;
-    saveBtn.innerHTML = loading
-      ? '<span class="spinner-border spinner-border-sm me-1"></span> Saving...'
-      : (editId ? 'Update Task' : 'Save Task');
-  }
-
-  function resetForm() {
-    form.reset();
-    form.classList.remove('was-validated');
-    fieldName.classList.remove('is-invalid');
-    editId = null;
-    modalTitle.textContent = 'Add New Task';
-    setFormLoading(false);
-  }
-
-  function parseTags(str) {
-    if (!str) return [];
-    const out = [];
-    const seen = new Set();
-    String(str).split(/[;,]/).forEach(function (part) {
-      const t = part.trim();
-      if (t && !seen.has(t.toLowerCase())) {
-        seen.add(t.toLowerCase());
-        out.push(t);
-      }
-    });
-    return out;
-  }
-
-  function getFormData() {
-    return {
-      id: editId,
-      name: fieldName.value.trim(),
-      description: fieldDesc.value.trim(),
-      tags: parseTags(fieldTags.value),
-      priority: fieldPriority.value,
-      status: fieldStatus.value,
-      dueDate: fieldDueDate.value,
-    };
-  }
-
-  function setFormData(task) {
-    fieldName.value = task.name || '';
-    fieldDesc.value = task.description || '';
-    fieldTags.value = (task.tags || []).join(', ');
-    fieldPriority.value = task.priority || 'Medium';
-    fieldStatus.value = task.status || 'Pending';
-    fieldDueDate.value = task.dueDate || '';
-  }
-
-  function validateForm() {
-    if (!fieldName.value.trim()) {
-      fieldName.classList.add('is-invalid');
-      fieldName.classList.add('shake');
-      setTimeout(function () { fieldName.classList.remove('shake'); }, 400);
-      return false;
-    }
-    fieldName.classList.remove('is-invalid');
-    return true;
-  }
-
-  function openForm(taskData) {
-    if (taskData) {
-      editId = taskData.id;
-      setFormData(taskData);
-      modalTitle.textContent = 'Edit Task';
-      setFormLoading(false);
-    } else {
-      resetForm();
-    }
-    taskModal.show();
-  }
-
-  function closeForm() {
-    taskModal.hide();
-  }
-
-  function handleSave(data) {
-    if (data.id) {
-      const tasks = loadTasks();
-      const nameKey = data.name.trim().toLowerCase();
-      if (tasks.some(function (t) { return t.id !== data.id && t.name.trim().toLowerCase() === nameKey; })) {
-        showToast('A task with this name already exists.', 'warning');
-        setFormLoading(false);
-        return;
-      }
-      if (!updateTask(data.id, data)) {
-        showToast('Failed to update task.', 'danger');
-        setFormLoading(false);
-        return;
-      }
-      showToast('Task updated!', 'success');
-    } else {
-      if (!addTask(data)) {
-        showToast('A task with this name already exists.', 'warning');
-        setFormLoading(false);
-        return;
-      }
-      showToast('Task added!', 'success');
-    }
-    closeForm();
-    currentPage = 1;
-    refresh();
-  }
-
-  saveBtn.addEventListener('click', function () {
-    if (!validateForm()) return;
-    setFormLoading(true);
-    handleSave(getFormData());
-  });
-
-  form.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
-      e.preventDefault();
-      if (!validateForm()) return;
-      setFormLoading(true);
-      handleSave(getFormData());
-    }
-  });
-
-  function handleTaskAction(e) {
-    const item = e.target.closest('[data-action]');
-    if (!item) return;
-    const id = item.dataset.id;
-    const action = item.dataset.action;
-    if (action === 'edit') {
-      const task = loadTasks().find(function (t) { return t.id === id; });
-      if (task) openForm(task);
-    }
-    if (action === 'delete') {
-      confirmThen('Delete Task', 'Are you sure you want to delete this task?', function () {
-        const tasks = loadTasks();
-        const task = tasks.find(function (t) { return t.id === id; });
-        if (task) {
-          lastDeleted = task;
-          if (undoTimeout) clearTimeout(undoTimeout);
-          undoTimeout = setTimeout(function () { lastDeleted = null; }, 5000);
-        }
-        deleteTask(id);
-        confirmModal.hide();
-        showUndoDeleteToast(task ? task.name : 'Task');
-        currentPage = 1;
-        refresh();
-      }, 'danger');
-    }
-    if (action === 'copy') {
-      confirmThen('Duplicate Task', 'Create a copy of this task?', function () {
-        duplicateTask(id);
-        confirmModal.hide();
-        showToast('Task duplicated!', 'info');
-        currentPage = 1;
-        refresh();
-      }, 'info');
-    }
-  }
-
-  taskList.addEventListener('click', handleTaskAction);
-  mobileTaskList.addEventListener('click', handleTaskAction);
-
-  function confirmThen(title, body, action, iconType) {
-    iconType = iconType || 'danger';
-    confirmTitle.textContent = title;
-    confirmBody.textContent = body;
-    confirmIcon.innerHTML = confirmIcons[iconType] || confirmIcons.danger;
-    confirmIcon.className = 'confirm-icon confirm-icon-' + iconType + ' mx-auto d-flex';
-    confirmBtn.className = 'btn btn-sm btn-' + (iconType === 'info' ? 'primary' : (iconType === 'warning' ? 'warning text-dark' : 'danger'));
-    confirmSpinner.classList.add('d-none');
-    confirmBtnText.textContent = 'Confirm';
-    confirmBtn.disabled = false;
-    confirmBtn.onclick = function () {
-      confirmBtn.disabled = true;
-      confirmSpinner.classList.remove('d-none');
-      action();
-    };
-    confirmModal.show();
-  }
-
-  confirmModalEl.addEventListener('hidden.bs.modal', function () {
-    confirmBtn.disabled = false;
-    confirmSpinner.classList.add('d-none');
-    confirmBtnText.textContent = 'Confirm';
-  });
-
-  function populateTagFilter(allTasks) {
-    if (!tagFilter) return;
-    const tags = new Set();
-    allTasks.forEach(function (t) {
-      (t.tags || []).forEach(function (tag) { if (tag) tags.add(tag); });
-    });
-    const sorted = Array.from(tags).sort(function (a, b) {
-      return a.toLowerCase().localeCompare(b.toLowerCase());
-    });
-    if (sorted.length === 0) {
-      tagFilter.innerHTML = '<span class="text-muted small">No tags yet</span>';
-      return;
-    }
-    tagFilter.innerHTML = sorted.map(function (tag) {
-      const active = selectedTags.has(tag) ? ' active' : '';
-      return '<button type="button" class="tag-chip' + active + '" data-tag="' + escapeHtml(tag) + '">' + escapeHtml(tag) + '</button>';
-    }).join('');
-  }
-
-  if (tagFilter) {
-    tagFilter.addEventListener('click', function (e) {
-      const chip = e.target.closest('.tag-chip');
-      if (!chip) return;
-      const tag = chip.dataset.tag;
-      if (selectedTags.has(tag)) selectedTags.delete(tag);
-      else selectedTags.add(tag);
-      refresh();
-    });
-  }
-
-  function refresh() {
-    let all = loadTasks();
-    let filtered = applyFilters(all);
-    populateTagFilter(all);
-    renderActiveFilters();
-    updateSidebarFromFilter();
-    render(all, filtered);
-  }
-
-  function renderActiveFilters() {
-    const el = document.getElementById('activeFilters');
-    if (!el) return;
-    const chips = [];
-    const state = getFilterState();
-    if (state.status) {
-      chips.push({ label: 'Status: ' + state.status, clear: function () { filterStatus.value = ''; } });
-    }
-    if (state.priority) {
-      chips.push({ label: 'Priority: ' + state.priority, clear: function () { filterPriority.value = ''; } });
-    }
-    if (state.dueDateFilter) {
-      chips.push({ label: 'Date: ' + formatDate(state.dueDateFilter), clear: function () { filterDueDate.value = ''; } });
-    }
-    if (chips.length === 0) {
-      el.classList.add('d-none');
-      el.innerHTML = '';
-      return;
-    }
-    el.classList.remove('d-none');
-    el.innerHTML = chips.map(function (c, idx) {
-      return '<span class="filter-chip">' + escapeHtml(c.label) +
-        '<button type="button" aria-label="Remove filter" data-idx="' + idx + '">' +
-        '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>' +
-        '</button></span>';
-    }).join('');
-    el._chips = chips;
-  }
-
-  if (document.getElementById('activeFilters')) {
-    document.getElementById('activeFilters').addEventListener('click', function (e) {
-      const btn = e.target.closest('button[data-idx]');
-      if (!btn) return;
-      const chips = this._chips || [];
-      const chip = chips[parseInt(btn.dataset.idx, 10)];
-      if (chip) { chip.clear(); selectedIds.clear(); currentPage = 1; refresh(); }
-    });
-  }
-
-  const sidebarNav = document.getElementById('sidebarNav');
-  if (sidebarNav) {
-    sidebarNav.addEventListener('click', function (e) {
-      const item = e.target.closest('.nav-item');
-      if (!item) return;
-      e.preventDefault();
-      const nav = item.dataset.nav;
-      filterStatus.value = nav === 'all' ? '' : nav;
-      selectedIds.clear();
-      currentPage = 1;
-      refresh();
-    });
-  }
-
-  function updateSidebarFromFilter() {
-    if (!sidebarNav) return;
-    const current = filterStatus.value;
-    sidebarNav.querySelectorAll('.nav-item').forEach(function (item) {
-      const nav = item.dataset.nav;
-      const active = (nav === 'all' && !current) || (nav === current);
-      item.classList.toggle('active', active);
-    });
-  }
-
-  paginationList.addEventListener('click', function (e) {
-    let link = e.target.closest('a.page-link');
-    if (!link) return;
-    e.preventDefault();
-    let page = link.dataset.page;
-    if (page === 'prev') { if (currentPage > 1) currentPage--; }
-    else if (page === 'next') { currentPage++; }
-    else { currentPage = parseInt(page, 10); }
-    let all = loadTasks();
-    let filtered = applyFilters(all);
-    render(all, filtered);
-  });
-
-  prevPageBtn.addEventListener('click', function () {
-    if (currentPage > 1) { currentPage--; refresh(); }
-  });
-
-  nextPageBtn.addEventListener('click', function () {
-    let all = loadTasks();
-    let filtered = applyFilters(all);
-    let totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
-    if (currentPage < totalPages) { currentPage++; refresh(); }
-  });
-
-  let searchTimer;
-  searchInput.addEventListener('input', function () { clearTimeout(searchTimer); searchTimer = setTimeout(refresh, 200); });
-  filterStatus.addEventListener('change', function () { selectedIds.clear(); refresh(); });
-  filterPriority.addEventListener('change', function () { selectedIds.clear(); refresh(); });
-  filterDueDate.addEventListener('change', function () { selectedIds.clear(); refresh(); });
-  clearBtn.addEventListener('click', function () { resetFilters(); selectedIds.clear(); currentPage = 1; refresh(); });
-
-  if (clearFiltersFromEmpty) {
-    clearFiltersFromEmpty.addEventListener('click', function () { resetFilters(); selectedIds.clear(); currentPage = 1; refresh(); });
-  }
-
-  // Checkbox delegation for bulk selection
-  document.addEventListener('change', function (e) {
-    if (e.target.classList.contains('task-checkbox')) {
-      const id = e.target.dataset.id;
-      if (e.target.checked) { selectedIds.add(id); }
-      else { selectedIds.delete(id); }
-      updateBulkActions();
-    }
-  });
-
-  function syncSelectAll(checked) {
-    document.querySelectorAll('.task-checkbox').forEach(function (cb) { cb.checked = checked; });
-    selectedIds.clear();
-    if (checked) {
-      document.querySelectorAll('.task-checkbox').forEach(function (cb) { selectedIds.add(cb.dataset.id); });
-    }
-    updateBulkActions();
-  }
-
-  if (selectAllCheckbox) {
-    selectAllCheckbox.addEventListener('change', function () { syncSelectAll(this.checked); });
-  }
-  if (selectAllCheckboxHeader) {
-    selectAllCheckboxHeader.addEventListener('change', function () {
-      if (selectAllCheckbox) selectAllCheckbox.checked = this.checked;
-      syncSelectAll(this.checked);
-    });
-  }
-
-  // Bulk actions
-  bulkDeleteBtn.addEventListener('click', function () {
-    if (selectedIds.size === 0) return;
-    const count = selectedIds.size;
-    confirmThen('Delete ' + count + ' Task' + (count > 1 ? 's' : ''), 'Delete ' + count + ' selected task' + (count > 1 ? 's' : '') + '?', function () {
-      const tasks = loadTasks().filter(function (t) { return !selectedIds.has(t.id); });
-      saveTasks(tasks);
-      selectedIds.clear();
-      confirmModal.hide();
-      showToast('Deleted ' + count + ' task' + (count > 1 ? 's' : '') + '.', 'danger');
-      currentPage = 1;
-      refresh();
-    }, 'danger');
-  });
-
-  bulkCompleteBtn.addEventListener('click', function () {
-    if (selectedIds.size === 0) return;
+  // JSON Full Backup & Restore
+  function exportToJson() {
     const tasks = loadTasks();
-    for (let i = 0; i < tasks.length; i++) {
-      if (selectedIds.has(tasks[i].id)) {
-        tasks[i].status = 'Completed';
+    const today = localDateStr(new Date());
+    const dataStr = JSON.stringify(tasks, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'task_tracker_backup_' + today + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Saved full JSON backup (' + tasks.length + ' tasks)', 'success');
+  }
+
+  function importFromJson(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        if (!Array.isArray(parsed)) {
+          showToast('Invalid backup file. Array of tasks expected.', 'danger');
+          return;
+        }
+        const valid = parsed.filter(isValidTask);
+        if (valid.length === 0) {
+          showToast('No valid tasks found in JSON file.', 'warning');
+          return;
+        }
+
+        const existing = loadTasks();
+        const existingNames = new Set(existing.map(function (t) { return t.name.trim().toLowerCase(); }));
+        let imported = 0;
+        let skipped = 0;
+
+        valid.forEach(function (t) {
+          const nameKey = t.name.trim().toLowerCase();
+          if (existingNames.has(nameKey)) {
+            skipped++;
+          } else {
+            existingNames.add(nameKey);
+            existing.push({
+              ...t,
+              id: generateID()
+            });
+            imported++;
+          }
+        });
+
+        saveTasks(existing);
+        showToast('Restored ' + imported + ' tasks from JSON (' + skipped + ' duplicates skipped)', 'success');
+        refresh();
+      } catch (err) {
+        showToast('Failed to parse JSON file.', 'danger');
       }
+    };
+    reader.readAsText(file);
+  }
+
+  // CSV Export
+  function exportToCsv() {
+    const tasks = loadTasks();
+    if (tasks.length === 0) {
+      showToast('No tasks to export.', 'warning');
+      return;
     }
-    saveTasks(tasks);
-    const count = selectedIds.size;
-    selectedIds.clear();
-    showToast('Marked ' + count + ' task' + (count > 1 ? 's' : '') + ' complete.', 'success');
-    refresh();
-  });
+    const today = localDateStr(new Date());
+    let csv = 'Sr No,Task Name,Description,Priority,Status,Assign Date,Tags,Time Spent\n';
 
-  // Theme toggle
-  themeToggle.addEventListener('click', toggleTheme);
+    tasks.forEach(function (t, i) {
+      const row = [
+        i + 1,
+        '"' + (t.name || '').replace(/"/g, '""') + '"',
+        '"' + (t.description || '').replace(/"/g, '""') + '"',
+        '"' + (t.priority || '') + '"',
+        '"' + (t.status || '') + '"',
+        '"' + (t.dueDate || '') + '"',
+        '"' + (t.tags || []).join(', ') + '"',
+        t.timeSpent || 0
+      ];
+      csv += row.join(',') + '\n';
+    });
 
-  // Keyboard shortcuts
-  document.addEventListener('keydown', function (e) {
-    if (e.key === '/' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-      e.preventDefault();
-      searchInput.focus();
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tasks_' + today + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Exported ' + tasks.length + ' tasks to CSV', 'success');
+  }
+
+  // Markdown Checklist Export
+  function exportToMarkdown() {
+    const tasks = loadTasks();
+    if (tasks.length === 0) {
+      showToast('No tasks to export.', 'warning');
+      return;
     }
-    if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-      e.preventDefault();
-      resetForm();
-      taskModal.show();
-    }
-  });
+    const today = localDateStr(new Date());
+    let md = '# Project Tasks Checklist - ' + today + '\n\n';
 
-  const taskModal    = new bootstrap.Modal(modalTask);
-  const confirmModal = new bootstrap.Modal(confirmModalEl);
-  const instrModal   = new bootstrap.Modal(excelModalEl);
+    tasks.forEach(function (t) {
+      const check = t.status === 'Completed' ? '[x]' : '[ ]';
+      md += '- ' + check + ' **' + t.name + '** (`' + t.priority + '` | `' + t.status + '`' + (t.dueDate ? ' | Due: ' + t.dueDate : '') + ')\n';
+      if (t.description) {
+        md += '  > ' + t.description.replace(/\n/g, '\n  > ') + '\n';
+      }
+      if (Array.isArray(t.subtasks) && t.subtasks.length > 0) {
+        t.subtasks.forEach(function (st) {
+          md += '  - ' + (st.completed ? '[x]' : '[ ]') + ' ' + st.text + '\n';
+        });
+      }
+    });
 
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tasks_checklist_' + today + '.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Exported Markdown checklist', 'success');
+  }
+
+  // Data Actions Event Listeners
   exportBtn.addEventListener('click', exportToExcel);
+  exportJsonBtn.addEventListener('click', exportToJson);
+  exportCsvBtn.addEventListener('click', exportToCsv);
+  exportMarkdownBtn.addEventListener('click', exportToMarkdown);
 
   importBtn.addEventListener('click', function () {
     instrModal.show();
@@ -1145,17 +2419,98 @@
     }
   });
 
-  modalTask.addEventListener('hidden.bs.modal', resetForm);
+  importJsonBtn.addEventListener('click', function () {
+    jsonFileInput.value = '';
+    jsonFileInput.click();
+  });
 
+  jsonFileInput.addEventListener('change', function () {
+    if (this.files && this.files[0]) {
+      importFromJson(this.files[0]);
+    }
+  });
+
+  themeToggle.addEventListener('click', toggleTheme);
+
+  // Keyboard Shortcuts Handler
+  document.addEventListener('keydown', function (e) {
+    const activeEl = document.activeElement;
+    const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
+
+    // Ctrl+K or Cmd+K: Command Palette
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      openCommandPalette();
+      return;
+    }
+
+    if (isTyping) return;
+
+    // Search focus
+    if (e.key === '/') {
+      e.preventDefault();
+      searchInput.focus();
+    }
+    // New task
+    if (e.key === 'n' || e.key === 'N') {
+      e.preventDefault();
+      openForm();
+    }
+    // Switch views
+    if (e.key === 'l' || e.key === 'L') {
+      e.preventDefault();
+      switchView('list');
+    }
+    if (e.key === 'b' || e.key === 'B') {
+      e.preventDefault();
+      switchView('kanban');
+    }
+    if (e.key === 'a' || e.key === 'A') {
+      e.preventDefault();
+      switchView('analytics');
+    }
+    // Theme toggle
+    if (e.key === 't' || e.key === 'T') {
+      e.preventDefault();
+      toggleTheme();
+    }
+    // Daily Standup
+    if (e.key === 's' || e.key === 'S') {
+      e.preventDefault();
+      generateStandupReport();
+    }
+    // Shortcuts guide
+    if (e.key === '?') {
+      e.preventDefault();
+      shortcutsModal.show();
+    }
+  });
+
+  // Modal Instances
+  const taskModal       = new bootstrap.Modal(modalTask);
+  const taskDetailModal = new bootstrap.Modal(taskDetailModalEl);
+  const confirmModal    = new bootstrap.Modal(confirmModalEl);
+  const instrModal      = new bootstrap.Modal(excelModalEl);
+  const commandPaletteModal = new bootstrap.Modal(commandPaletteModalEl);
+  const standupModal    = new bootstrap.Modal(standupModalEl);
+  const shortcutsModal  = new bootstrap.Modal(shortcutsModalEl);
+
+  modalTask.addEventListener('hidden.bs.modal', resetForm);
   modalTask.addEventListener('shown.bs.modal', function () {
     fieldName.focus();
   });
 
-  // Init dark mode
+  commandPaletteModalEl.addEventListener('shown.bs.modal', function () {
+    cmdPaletteInput.focus();
+  });
+
+  // Init Theme
   try {
     const saved = localStorage.getItem(THEME_KEY);
     if (saved === 'dark') setTheme('dark');
   } catch (e) {}
 
+  // Initialize App
+  updateTimerDisplay();
   refresh();
 })();
