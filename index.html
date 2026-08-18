@@ -7,12 +7,15 @@
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self';
                  script-src 'self' https://cdn.jsdelivr.net https://cdn.sheetjs.com;
-                 style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline';
-                 connect-src 'self';
+                 style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com 'unsafe-inline';
+                 font-src 'self' data: https://fonts.gstatic.com;
+                 connect-src 'self' https://fonts.gstatic.com;
                  img-src 'self' data:;
-                 font-src 'self' data:;
                  base-uri 'self';
                  form-action 'self';">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
         rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
@@ -22,158 +25,243 @@
           crossorigin="anonymous"></script>
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="min-vh-100 d-flex flex-column">
+<body>
 
-  <!-- Header -->
-  <header class="shadow-sm border-bottom">
-    <div class="container d-flex align-items-center justify-content-between py-3">
-      <h1 class="h5 fw-bold mb-0 d-flex align-items-center gap-2">
-        <svg width="24" height="24" fill="#2563eb" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2zm0 8a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H2zm8-8a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-4zm0 8a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1h-4z"/></svg>
-        Task Tracker
-      </h1>
-      <div class="d-flex gap-2">
-        <div class="dropdown">
-          <button class="btn btn-sm btn-outline-secondary px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Excel actions">
-            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2zm4.5 5.5L8.5 8l-2 1.5V12l3.5-2.5L13.5 12V9.5L11.5 8l2-1.5V4L8.5 6.5 5 4v2.5z"/></svg>
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li><button class="dropdown-item" id="exportExcelBtn">Download Excel</button></li>
-            <li><button class="dropdown-item" id="importExcelBtn">Upload Excel</button></li>
-          </ul>
-        </div>
-        <button class="btn btn-sm btn-outline-secondary px-2" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" id="themeIcon">
-            <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
-          </svg>
-        </button>
-        <button class="btn btn-primary d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#taskModal">
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>
-          <span class="d-none d-sm-inline">Add Task</span>
-        </button>
+  <div class="app d-flex">
+    <!-- Sidebar -->
+    <aside class="sidebar offcanvas-lg offcanvas-start" id="sidebar" tabindex="-1" aria-label="Main navigation">
+      <div class="sidebar-brand">
+        <span class="brand-logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor"><path d="M2 1a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2zm0 8a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H2zm8-8a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-4zm0 8a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1h-4z"/></svg>
+        </span>
+        <span class="brand-name">Task Tracker</span>
+        <button class="btn-close d-lg-none ms-auto" type="button" data-bs-dismiss="offcanvas" aria-label="Close navigation"></button>
       </div>
-    </div>
-  </header>
 
-  <!-- Main Content -->
-  <main class="container py-4 flex-grow-1">
-
-    <!-- Stats Row -->
-    <div class="row g-3 mb-4">
-      <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm p-3 stat-card">
-          <p class="text-muted mb-0 small">Total Tasks</p>
-          <h3 class="fw-bold mb-0 stat-number">0</h3>
-        </div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm p-3 stat-card">
-          <p class="text-muted mb-0 small">In Progress</p>
-          <h3 class="fw-bold text-warning mb-0 stat-number">0</h3>
-        </div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm p-3 stat-card">
-          <p class="text-muted mb-0 small">Completed</p>
-          <h3 class="fw-bold text-success mb-0 stat-number">0</h3>
-        </div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm p-3 stat-card">
-          <p class="text-muted mb-0 small">Pending</p>
-          <h3 class="fw-bold text-secondary mb-0 stat-number">0</h3>
-        </div>
-      </div>
-    </div>
-
-    <!-- Filters -->
-    <div id="filterBar" class="d-flex flex-wrap gap-2 mb-3 align-items-center">
-      <input type="text" class="form-control form-control-sm" style="width:200px;min-width:160px" placeholder="Search tasks..." aria-label="Search" id="searchInput">
-      <select class="form-select form-select-sm" id="filterStatus" aria-label="Filter by status" style="width:auto">
-        <option value="">All Statuses</option>
-        <option value="Pending">Pending</option>
-        <option value="In Progress">In Progress</option>
-        <option value="Completed">Completed</option>
-      </select>
-      <select class="form-select form-select-sm" id="filterPriority" aria-label="Filter by priority" style="width:auto">
-        <option value="">All Priorities</option>
-        <option value="Low">Low</option>
-        <option value="Medium">Medium</option>
-        <option value="High">High</option>
-      </select>
-      <input type="date" class="form-control form-control-sm" id="filterDueDate" aria-label="Filter by assign date" style="width:auto">
-      <button class="btn btn-outline-secondary btn-sm" id="clearFilters">Clear</button>
-    </div>
-
-    <!-- Bulk action bar -->
-    <div id="bulkActionBar" class="d-none mb-3 py-2 px-3 bg-light rounded border">
-      <div class="d-flex align-items-center gap-3">
-        <input type="checkbox" class="form-check-input" id="selectAllCheckbox" title="Select all">
-        <small class="text-muted" id="selectedCount">0 selected</small>
-        <button class="btn btn-sm btn-outline-danger" id="bulkDeleteBtn">Delete Selected</button>
-        <button class="btn btn-sm btn-outline-success" id="bulkCompleteBtn">Mark Complete</button>
-      </div>
-    </div>
-
-    <!-- Empty State (no tasks at all) -->
-    <div id="emptyState" class="text-center py-5">
-      <svg width="80" height="80" fill="none" stroke="currentColor" stroke-width="0.8" class="text-muted mb-3" viewBox="0 0 100 100">
-        <rect x="20" y="15" width="60" height="72" rx="6" stroke="currentColor" fill="#f8f9fa"/>
-        <line x1="35" y1="38" x2="65" y2="38" stroke="currentColor" stroke-linecap="round"/>
-        <line x1="35" y1="50" x2="60" y2="50" stroke="currentColor" stroke-linecap="round"/>
-        <line x1="35" y1="62" x2="55" y2="62" stroke="currentColor" stroke-linecap="round"/>
-        <circle cx="72" cy="72" r="16" fill="#e3f2fd" stroke="#2563eb" stroke-width="1.5"/>
-        <line x1="72" y1="66" x2="72" y2="78" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
-        <line x1="66" y1="72" x2="78" y2="72" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <h5 class="fw-semibold">No tasks yet</h5>
-      <p class="text-muted mb-1">Your task board is empty.</p>
-      <p class="text-muted mb-3 small">Create your first task to get started.</p>
-      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#taskModal">Add New Task</button>
-    </div>
-
-    <!-- No Results State (tasks exist but filters match none) -->
-    <div id="noResultsState" class="text-center py-5 d-none">
-      <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="1" class="text-muted mb-3" viewBox="0 0 100 100">
-        <circle cx="44" cy="44" r="28" stroke="currentColor" fill="#f8f9fa"/>
-        <line x1="64" y1="64" x2="84" y2="84" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>
-        <line x1="34" y1="44" x2="54" y2="44" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <h5 class="fw-semibold">No matching tasks</h5>
-      <p class="text-muted mb-3">Try adjusting your search or filters.</p>
-      <button class="btn btn-outline-secondary btn-sm" id="clearFiltersFromEmpty">Clear Filters</button>
-    </div>
-
-    <!-- Task Table -->
-    <div id="taskGrid" class="d-none">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0" id="taskTable">
-          <thead class="table-light">
-            <tr>
-              <th scope="col" style="width:40px"><input type="checkbox" class="form-check-input" id="selectAllCheckboxHeader" title="Select all"></th>
-              <th scope="col" style="min-width:200px">Task</th>
-              <th scope="col" style="width:100px">Priority</th>
-              <th scope="col" style="width:120px">Status</th>
-              <th scope="col" style="width:110px">Assign Date</th>
-              <th scope="col" style="width:110px"><span class="visually-hidden">Actions</span></th>
-            </tr>
-          </thead>
-          <tbody id="taskList"></tbody>
-        </table>
-      </div>
-      <!-- Mobile task cards -->
-      <div id="mobileTaskList"></div>
-      <nav class="mt-3 d-flex justify-content-between align-items-center flex-sm-row flex-column gap-2" id="pagination">
-        <small class="text-muted" id="tableInfo">Showing 0 of 0 tasks</small>
-        <ul class="pagination pagination-sm mb-0 d-none d-sm-flex" id="paginationList"></ul>
-        <div class="d-sm-none d-flex align-items-center gap-2" id="mobilePagination">
-          <button class="btn btn-sm btn-outline-secondary" id="prevPageBtn">&larr; Prev</button>
-          <small class="text-muted" id="pageInfo">Page 1 of 1</small>
-          <button class="btn btn-sm btn-outline-secondary" id="nextPageBtn">Next &rarr;</button>
-        </div>
+      <nav class="sidebar-nav" id="sidebarNav">
+        <p class="sidebar-section">Views</p>
+        <a href="#" class="nav-item active" data-nav="all" data-bs-dismiss="offcanvas">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" data-nav="In Progress" data-bs-dismiss="offcanvas">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M11 2v10.59l3.3-3.3 1.4 1.42L12 16l-6.7-6.7 1.4-1.42L11 12.59V2h2zm-7 16h14v2H4v-2z"/></svg>
+          <span>In Progress</span>
+        </a>
+        <a href="#" class="nav-item" data-nav="Completed" data-bs-dismiss="offcanvas">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+          <span>Completed</span>
+        </a>
+        <a href="#" class="nav-item" data-nav="Pending" data-bs-dismiss="offcanvas">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 12h-2v-2h2v2zm0-4h-2V7h2v4z"/></svg>
+          <span>Pending</span>
+        </a>
       </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-foot-note">Task Tracker</div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="app-main d-flex flex-column flex-grow-1 min-vh-100">
+       <header class="topbar">
+         <div class="topbar-left">
+           <button class="icon-btn d-lg-none me-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="Open navigation">
+             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+           </button>
+           <h1 class="topbar-title">Dashboard</h1>
+          <p class="topbar-subtitle">Manage and track your development tasks</p>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-actions">
+            <div class="dropdown">
+              <button class="icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Excel actions" title="Import / Export">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 7V3.5L18.5 9H16zM8.5 11.5 11 14l-2.5 2.5V18l3.5-2.5L15.5 18v-1.5L13 14l2.5-2.5V10L11 12.5 8.5 10v1.5z"/></svg>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><button class="dropdown-item" id="exportExcelBtn">Download Excel</button></li>
+                <li><button class="dropdown-item" id="importExcelBtn">Upload Excel</button></li>
+              </ul>
+            </div>
+            <button class="icon-btn" id="themeToggle" aria-label="Toggle dark mode" title="Toggle theme">
+              <svg id="themeIcon" viewBox="0 0 16 16" width="20" height="20" fill="currentColor"><path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/></svg>
+            </button>
+            <button class="btn btn-primary btn-add d-none d-lg-inline-flex" data-bs-toggle="modal" data-bs-target="#taskModal">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>
+              <span>Add Task</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="content flex-grow-1">
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-head">
+              <span class="stat-icon stat-icon-primary">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 16H5V8h14v11z"/></svg>
+              </span>
+              <span class="stat-label">Total Tasks</span>
+            </div>
+            <h3 class="stat-number">0</h3>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-head">
+              <span class="stat-icon stat-icon-blue">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11 2v10.59l3.3-3.3 1.4 1.42L12 16l-6.7-6.7 1.4-1.42L11 12.59V2h2zm-7 16h14v2H4v-2z"/></svg>
+              </span>
+              <span class="stat-label">In Progress</span>
+            </div>
+            <h3 class="stat-number">0</h3>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-head">
+              <span class="stat-icon stat-icon-green">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              </span>
+              <span class="stat-label">Completed</span>
+            </div>
+            <h3 class="stat-number">0</h3>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-head">
+              <span class="stat-icon stat-icon-slate">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 12h-2v-2h2v2zm0-4h-2V7h2v4z"/></svg>
+              </span>
+              <span class="stat-label">Pending</span>
+            </div>
+            <h3 class="stat-number">0</h3>
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div id="filterBar" class="toolbar">
+          <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+            <input type="text" class="form-control search-input" placeholder="Search tasks, tags, or descriptions..." aria-label="Search" id="searchInput">
+          </div>
+
+          <div class="filter-controls">
+            <div class="select-wrap">
+              <svg class="select-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 5h18v2H3zm4 6h10v2H7zm2 6h6v2H9z"/></svg>
+              <select class="form-select form-select-sm filter-select" id="filterStatus" aria-label="Filter by status">
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+            <div class="select-wrap">
+              <svg class="select-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 14h4v6H4zm0-10h4v6H4zm8 5h4v11h-4zm0-5h4v4h-4z"/></svg>
+              <select class="form-select form-select-sm filter-select" id="filterPriority" aria-label="Filter by priority">
+                <option value="">All Priorities</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <div class="select-wrap">
+              <svg class="select-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14v11z"/></svg>
+              <input type="date" class="form-control form-control-sm filter-date" id="filterDueDate" aria-label="Filter by assign date">
+            </div>
+            <button class="btn btn-clear" id="clearFilters">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <!-- Active filter chips -->
+        <div id="activeFilters" class="active-filters d-none"></div>
+
+        <!-- Tag filter chips -->
+        <div id="tagFilter" class="tag-filter-row"></div>
+
+        <!-- Bulk action bar -->
+        <div id="bulkActionBar" class="bulk-bar d-none">
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <input type="checkbox" class="form-check-input" id="selectAllCheckbox" title="Select all">
+            <small class="bulk-count" id="selectedCount">0 selected</small>
+            <button class="btn btn-sm btn-outline-danger" id="bulkDeleteBtn">Delete Selected</button>
+            <button class="btn btn-sm btn-outline-success" id="bulkCompleteBtn">Mark Complete</button>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state">
+          <div class="empty-illus">
+            <svg width="72" height="72" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="0.8">
+              <rect x="20" y="15" width="60" height="72" rx="6" stroke="currentColor" fill="#f8fafc"/>
+              <line x1="35" y1="38" x2="65" y2="38" stroke="currentColor" stroke-linecap="round"/>
+              <line x1="35" y1="50" x2="60" y2="50" stroke="currentColor" stroke-linecap="round"/>
+              <line x1="35" y1="62" x2="55" y2="62" stroke="currentColor" stroke-linecap="round"/>
+              <circle cx="72" cy="72" r="16" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+              <line x1="72" y1="66" x2="72" y2="78" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+              <line x1="66" y1="72" x2="78" y2="72" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h5 class="empty-title">No tasks yet</h5>
+          <p class="empty-text">Your task board is empty. Create your first task to get started.</p>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#taskModal">Add New Task</button>
+        </div>
+
+        <!-- No Results State -->
+        <div id="noResultsState" class="empty-state d-none">
+          <div class="empty-illus">
+            <svg width="64" height="64" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1">
+              <circle cx="44" cy="44" r="28" stroke="currentColor" fill="#f8fafc"/>
+              <line x1="64" y1="64" x2="84" y2="84" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>
+              <line x1="34" y1="44" x2="54" y2="44" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h5 class="empty-title">No matching tasks</h5>
+          <p class="empty-text">Try adjusting your search or filters.</p>
+          <button class="btn btn-clear-solid" id="clearFiltersFromEmpty">Clear Filters</button>
+        </div>
+
+        <!-- Task Grid -->
+        <div id="taskGrid" class="task-grid d-none">
+          <div class="task-list-card">
+            <div class="task-list-header d-none d-lg-flex">
+              <div class="col-check"><input type="checkbox" class="form-check-input task-checkbox" id="selectAllCheckboxHeader" title="Select all"></div>
+              <div class="col-name">Task Name</div>
+              <div class="col-priority">Priority</div>
+              <div class="col-status">Status</div>
+              <div class="col-tags">Tags</div>
+              <div class="col-date">Assign Date</div>
+              <div class="col-actions"><span class="visually-hidden">Actions</span></div>
+            </div>
+            <div id="taskList"></div>
+            <div id="mobileTaskList"></div>
+          </div>
+
+          <nav class="task-pagination d-flex justify-content-between align-items-center flex-sm-row flex-column gap-2">
+            <small class="page-info" id="tableInfo">Showing 0 of 0 tasks</small>
+            <ul class="pagination pagination-sm mb-0 d-none d-sm-flex" id="paginationList"></ul>
+            <div class="d-sm-none d-flex align-items-center gap-2 mobile-pager">
+              <button class="btn btn-sm btn-outline-secondary" id="prevPageBtn">&larr; Prev</button>
+              <small class="page-info" id="pageInfo">Page 1 of 1</small>
+              <button class="btn btn-sm btn-outline-secondary" id="nextPageBtn">Next &rarr;</button>
+            </div>
+          </nav>
+        </div>
+      </main>
+
+      <footer class="app-footer">
+        <div class="container-fluid">&copy; 2026 Developer Task Tracker</div>
+      </footer>
     </div>
-    <input type="file" id="excelFileInput" accept=".xlsx,.xls" class="d-none">
-  </main>
+  </div>
+
+  <!-- Mobile Add FAB -->
+  <button class="fab d-lg-none" data-bs-toggle="modal" data-bs-target="#taskModal" aria-label="Add task">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+  </button>
 
   <!-- Add/Edit Task Modal -->
   <div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
@@ -194,7 +282,12 @@
               <label for="taskDesc" class="form-label">Description</label>
               <textarea class="form-control" id="taskDesc" rows="3" placeholder="Enter description" maxlength="500"></textarea>
             </div>
-            <div class="row g-3 mb-3">
+            <div class="mb-3">
+              <label for="taskTags" class="form-label">Tags</label>
+              <input type="text" class="form-control" id="taskTags" placeholder="Comma-separated, e.g. bug, urgent" maxlength="200">
+              <div class="form-text">Separate multiple tags with commas.</div>
+            </div>
+            <div class="row g-3 mb-1">
               <div class="col-md-4">
                 <label for="taskPriority" class="form-label">Priority</label>
                 <select class="form-select" id="taskPriority">
@@ -272,7 +365,8 @@
                 <tr><td>Description</td><td>No</td><td class="text-muted">Task details</td></tr>
                 <tr><td>Priority</td><td>No</td><td class="text-muted">Low, Medium, or High</td></tr>
                 <tr><td>Status</td><td>No</td><td class="text-muted">Pending, In Progress, or Completed</td></tr>
-                <tr><td>Assign Date</td><td>No</td><td class="text-muted">YYYY-MM-DD format</td></tr>
+                 <tr><td>Assign Date</td><td>No</td><td class="text-muted">YYYY-MM-DD format</td></tr>
+                 <tr><td>Tags</td><td>No</td><td class="text-muted">Comma-separated list</td></tr>
               </tbody>
             </table>
           </div>
@@ -295,12 +389,7 @@
   <!-- Toast Container -->
   <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
 
-  <!-- Footer -->
-  <footer class="border-top py-3 mt-auto">
-    <div class="container text-center small">
-      &copy; 2026 Developer Task Tracker
-    </div>
-  </footer>
+  <input type="file" id="excelFileInput" accept=".xlsx,.xls" class="d-none">
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
           integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"

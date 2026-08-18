@@ -12,6 +12,7 @@
   const filterStatus   = document.getElementById('filterStatus');
   const filterPriority = document.getElementById('filterPriority');
   const filterDueDate  = document.getElementById('filterDueDate');
+  const tagFilter      = document.getElementById('tagFilter');
   const clearBtn       = document.getElementById('clearFilters');
   const modalTask      = document.getElementById('taskModal');
   const form           = document.getElementById('taskForm');
@@ -22,6 +23,7 @@
   const fieldPriority  = document.getElementById('taskPriority');
   const fieldStatus    = document.getElementById('taskStatus');
   const fieldDueDate   = document.getElementById('taskDueDate');
+  const fieldTags      = document.getElementById('taskTags');
   const confirmModalEl = document.getElementById('confirmModal');
   const confirmTitle   = document.getElementById('confirmTitle');
   const confirmBody    = document.getElementById('confirmBody');
@@ -56,15 +58,15 @@
   let undoTimeout = null;
 
   const priorityClass = {
-    Low: 'bg-success',
-    Medium: 'bg-warning text-dark',
-    High: 'bg-danger'
+    Low: 'pill-low',
+    Medium: 'pill-medium',
+    High: 'pill-high'
   };
 
   const statusClass = {
-    Pending: 'bg-secondary',
-    'In Progress': 'bg-primary',
-    Completed: 'bg-success'
+    Pending: 'pill-pending',
+    'In Progress': 'pill-inprogress',
+    Completed: 'pill-completed'
   };
 
   const toastIcons = {
@@ -87,10 +89,36 @@
     });
   }
 
+  function localDateStr(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  function formatDate(iso) {
+    if (!iso) return '—';
+    const parts = String(iso).split('-');
+    if (parts.length !== 3) return escapeHtml(iso);
+    const m = parseInt(parts[1], 10);
+    const d = parseInt(parts[2], 10);
+    if (isNaN(m) || isNaN(d)) return escapeHtml(iso);
+    const y = parseInt(parts[0], 10);
+    return MONTHS[m - 1] + ' ' + d + ', ' + y;
+  }
+
+  function priorityArrow(p) {
+    if (p === 'High') return '<span class="priority-arrow">&#9650;</span>';
+    if (p === 'Low') return '<span class="priority-arrow">&#9660;</span>';
+    return '<span class="priority-arrow">&#8212;</span>';
+  }
+
   function getDueDateInfo(task) {
     if (!task.dueDate || task.status === 'Completed') return { cls: '', label: '' };
-    const today = new Date().toISOString().slice(0, 10);
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    const today = localDateStr(new Date());
+    const tomorrow = localDateStr(new Date(Date.now() + 86400000));
     if (task.dueDate < today) return { cls: 'due-overdue', label: 'Overdue' };
     if (task.dueDate === today) return { cls: 'due-today', label: 'Due Today' };
     if (task.dueDate === tomorrow) return { cls: 'due-tomorrow', label: 'Due Tomorrow' };
@@ -100,6 +128,7 @@
   let editId = null;
   const PAGE_SIZE = 10;
   let currentPage = 1;
+  const selectedTags = new Set();
 
   function isValidTask(obj) {
     return obj && typeof obj === 'object' && typeof obj.id === 'string' && typeof obj.name === 'string';
@@ -111,7 +140,10 @@
       if (raw === null) return [];
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return [];
-      return parsed.filter(isValidTask);
+      return parsed.filter(isValidTask).map(function (t) {
+        if (!Array.isArray(t.tags)) t.tags = [];
+        return t;
+      });
     } catch (e) {
       return [];
     }
@@ -142,12 +174,13 @@
       id: generateID(),
       name: data.name,
       description: data.description || '',
+      tags: data.tags || [],
       priority: data.priority || 'Medium',
       status: data.status || 'Pending',
       dueDate: data.dueDate || '',
       createdAt: new Date().toISOString()
     };
-    tasks.push(task);
+    tasks.unshift(task);
     return saveTasks(tasks) ? task : null;
   }
 
@@ -177,7 +210,7 @@
       name: source.name + ' (Copy)',
       createdAt: new Date().toISOString()
     };
-    tasks.push(task);
+    tasks.unshift(task);
     return saveTasks(tasks) ? task : null;
   }
 
@@ -197,7 +230,8 @@
     if (state.search) {
       result = result.filter(function (t) {
         return t.name.toLowerCase().includes(state.search) ||
-               (t.description && t.description.toLowerCase().includes(state.search));
+               (t.description && t.description.toLowerCase().includes(state.search)) ||
+               (t.tags || []).some(function (tag) { return tag.toLowerCase().includes(state.search); });
       });
     }
 
@@ -207,6 +241,12 @@
 
     if (state.priority) {
       result = result.filter(function (t) { return t.priority === state.priority; });
+    }
+
+    if (selectedTags.size > 0) {
+      result = result.filter(function (t) {
+        return (t.tags || []).some(function (tag) { return selectedTags.has(tag); });
+      });
     }
 
     if (state.dueDateFilter) {
@@ -221,9 +261,14 @@
     filterStatus.value = '';
     filterPriority.value = '';
     filterDueDate.value = '';
+    selectedTags.clear();
   }
 
   function exportToExcel() {
+    if (typeof XLSX === 'undefined') {
+      showToast('Excel library failed to load. Please refresh.', 'danger');
+      return;
+    }
     const tasks = loadTasks();
     if (tasks.length === 0) {
       showToast('No tasks to export.', 'warning');
@@ -239,9 +284,9 @@
 
     loadingOverlay.classList.remove('d-none');
 
-    setTimeout(function () {
+    requestAnimationFrame(function () {
       const data = [
-        ['Sr No', 'Task Name', 'Description', 'Priority', 'Status', 'Assign Date']
+        ['Sr No', 'Task Name', 'Description', 'Priority', 'Status', 'Assign Date', 'Tags']
       ];
       for (let i = 0; i < tasks.length; i++) {
         const t = tasks[i];
@@ -251,7 +296,8 @@
           safeStr(t.description),
           t.priority || '',
           t.status || '',
-          t.dueDate || ''
+          t.dueDate || '',
+          safeStr((t.tags || []).join(', '))
         ]);
       }
 
@@ -272,10 +318,14 @@
 
       loadingOverlay.classList.add('d-none');
       showToast('Exported ' + tasks.length + ' tasks!', 'success');
-    }, 50);
+    });
   }
 
   function importFromExcel(file) {
+    if (typeof XLSX === 'undefined') {
+      showToast('Excel library failed to load. Please refresh.', 'danger');
+      return;
+    }
     if (!file) return;
     const allowedExt = /\.(xlsx|xls)$/i;
     if (!allowedExt.test(file.name)) {
@@ -309,7 +359,9 @@
           'due date': 'dueDate',
           'duedate': 'dueDate',
           'assign date': 'dueDate',
-          'assigndate': 'dueDate'
+          'assigndate': 'dueDate',
+          'tags': 'tags',
+          'tag': 'tags'
         };
 
         const validPriorities = { low: true, medium: true, high: true };
@@ -329,6 +381,7 @@
           let priority = 'Medium';
           let status = 'Pending';
           let dueDate = '';
+          let tags = '';
 
           for (const colKey in colMap) {
             const srcKey = keys[colKey];
@@ -340,6 +393,7 @@
             else if (field === 'priority') priority = val;
             else if (field === 'status') status = val;
             else if (field === 'dueDate') dueDate = val;
+            else if (field === 'tags') tags = val;
           }
 
           if (!name) continue;
@@ -358,6 +412,7 @@
             id: generateID(),
             name: name,
             description: description,
+            tags: parseTags(tags),
             priority: priority,
             status: status,
             dueDate: dueDate,
@@ -396,57 +451,66 @@
     reader.readAsArrayBuffer(file);
   }
 
-  function renderRow(task, i) {
+  function actionButtonsHtml(id) {
+    const idAttr = escapeHtml(id);
+    const moreSvg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>';
+    const editSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
+    const copySvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16 1H4a2 2 0 0 0-2 2v12h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zM8 21h11a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1z"/></svg>';
+    const delSvg  = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
+    return '<div class="dropdown task-action-menu">' +
+      '<button class="task-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Task actions">' + moreSvg + '</button>' +
+      '<ul class="dropdown-menu dropdown-menu-end">' +
+        '<li><button class="dropdown-item" data-action="edit" data-id="' + idAttr + '">' + editSvg + 'Edit</button></li>' +
+        '<li><button class="dropdown-item" data-action="copy" data-id="' + idAttr + '">' + copySvg + 'Duplicate</button></li>' +
+        '<li><button class="dropdown-item text-danger" data-action="delete" data-id="' + idAttr + '">' + delSvg + 'Delete</button></li>' +
+      '</ul></div>';
+  }
+
+  function tagChipsHtml(tags) {
+    const list = Array.isArray(tags) ? tags : [];
+    if (list.length === 0) return '<span class="text-muted">\u2014</span>';
+    return list.map(function (t) {
+      return '<span class="task-tag">' + escapeHtml(t) + '</span>';
+    }).join('');
+  }
+
+  function renderRow(task) {
     const due = getDueDateInfo(task);
-    return '<tr>' +
-      '<td class="text-center" style="width:40px"><input type="checkbox" class="form-check-input task-checkbox" data-id="' + escapeHtml(task.id) + '"></td>' +
-      '<td><div class="task-name fw-medium ' + due.cls + '">' + escapeHtml(task.name) + (due.label ? '<span class="overdue-badge">' + due.label + '</span>' : '') + '</div></td>' +
-      '<td><span class="badge ' + (priorityClass[task.priority] || 'bg-secondary') + '">' + escapeHtml(task.priority) + '</span></td>' +
-      '<td><span class="badge ' + (statusClass[task.status] || 'bg-secondary') + '">' + escapeHtml(task.status) + '</span></td>' +
-      '<td class="text-nowrap">' + escapeHtml(task.dueDate || '\u2014') + '</td>' +
-      '<td class="text-nowrap text-center" style="white-space:nowrap">' +
-        '<button class="btn btn-sm btn-icon action-edit" data-id="' + escapeHtml(task.id) + '" title="Edit">' +
-          '<svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10z"/></svg>' +
-        '</button>' +
-        '<button class="btn btn-sm btn-icon action-copy" data-id="' + escapeHtml(task.id) + '" title="Copy">' +
-          '<svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2z"/></svg>' +
-        '</button>' +
-        '<button class="btn btn-sm btn-icon action-delete" data-id="' + escapeHtml(task.id) + '" title="Delete">' +
-          '<svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>' +
-        '</button>' +
-      '</td>' +
-    '</tr>';
+    const isCompleted = task.status === 'Completed';
+    const priorityCls = 'pill ' + (priorityClass[task.priority] || 'pill-low');
+    const statusCls = 'pill ' + (statusClass[task.status] || 'pill-pending');
+    return '<div class="task-row' + (isCompleted ? ' is-completed' : '') + '">' +
+      '<div class="col-check"><input type="checkbox" class="form-check-input task-checkbox" data-id="' + escapeHtml(task.id) + '"' + (selectedIds.has(task.id) ? ' checked' : '') + '></div>' +
+      '<div class="col-name">' +
+        '<div class="task-title ' + due.cls + '">' + escapeHtml(task.name) + (due.label ? '<span class="overdue-badge">' + due.label + '</span>' : '') + '</div>' +
+        (task.description ? '<div class="task-sub">' + escapeHtml(task.description) + '</div>' : '') +
+      '</div>' +
+      '<div class="col-priority"><span class="priority-cell priority-' + escapeHtml(task.priority.toLowerCase()) + '">' + priorityArrow(task.priority) + '<span class="' + priorityCls + '">' + escapeHtml(task.priority) + '</span></span></div>' +
+      '<div class="col-status"><span class="' + statusCls + '">' + escapeHtml(task.status) + '</span></div>' +
+      '<div class="col-tags tag-cell">' + tagChipsHtml(task.tags) + '</div>' +
+      '<div class="col-date">' + (task.dueDate ? formatDate(task.dueDate) : '\u2014') + '</div>' +
+      '<div class="col-actions">' + actionButtonsHtml(task.id) + '</div>' +
+    '</div>';
   }
 
   function renderMobileCard(task) {
     const due = getDueDateInfo(task);
-    return '<div class="mobile-task-card">' +
+    const isCompleted = task.status === 'Completed';
+    const priorityCls = 'pill ' + (priorityClass[task.priority] || 'pill-low');
+    const statusCls = 'pill ' + (statusClass[task.status] || 'pill-pending');
+    return '<div class="mobile-task-card' + (isCompleted ? ' is-completed' : '') + '">' +
       '<div class="mobile-task-card-header">' +
-        '<input type="checkbox" class="form-check-input task-checkbox me-1" data-id="' + escapeHtml(task.id) + '">' +
+        '<input type="checkbox" class="form-check-input task-checkbox me-1" data-id="' + escapeHtml(task.id) + '"' + (selectedIds.has(task.id) ? ' checked' : '') + '">' +
         '<span class="mobile-task-card-name ' + due.cls + '">' + escapeHtml(task.name) + (due.label ? '<span class="overdue-badge">' + due.label + '</span>' : '') + '</span>' +
-        '<span class="badge ' + (priorityClass[task.priority] || 'bg-secondary') + ' flex-shrink-0">' + escapeHtml(task.priority) + '</span>' +
       '</div>' +
+      (task.description ? '<div class="mobile-task-card-body"><div class="mobile-task-card-row"><span class="mobile-task-card-label">Description</span><span>' + escapeHtml(task.description) + '</span></div></div>' : '') +
       '<div class="mobile-task-card-body">' +
-        '<div class="mobile-task-card-row">' +
-          '<span class="mobile-task-card-label">Status</span>' +
-          '<span class="badge ' + (statusClass[task.status] || 'bg-secondary') + '">' + escapeHtml(task.status) + '</span>' +
-        '</div>' +
-        '<div class="mobile-task-card-row">' +
-          '<span class="mobile-task-card-label">Assign Date</span>' +
-          '<span>' + escapeHtml(task.dueDate || '\u2014') + '</span>' +
-        '</div>' +
+        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Priority</span><span class="' + priorityCls + '">' + escapeHtml(task.priority) + '</span></div>' +
+        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Status</span><span class="' + statusCls + '">' + escapeHtml(task.status) + '</span></div>' +
+        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Tags</span><span>' + tagChipsHtml(task.tags) + '</span></div>' +
+        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Assign Date</span><span>' + (task.dueDate ? formatDate(task.dueDate) : '\u2014') + '</span></div>' +
       '</div>' +
-      '<div class="mobile-task-card-actions">' +
-        '<button class="btn btn-sm btn-icon action-edit" data-id="' + escapeHtml(task.id) + '" title="Edit">' +
-          '<svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10z"/></svg>' +
-        '</button>' +
-        '<button class="btn btn-sm btn-icon action-copy" data-id="' + escapeHtml(task.id) + '" title="Copy">' +
-          '<svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2z"/></svg>' +
-        '</button>' +
-        '<button class="btn btn-sm btn-icon action-delete" data-id="' + escapeHtml(task.id) + '" title="Delete">' +
-          '<svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>' +
-        '</button>' +
-      '</div>' +
+      '<div class="mobile-task-card-actions">' + actionButtonsHtml(task.id) + '</div>' +
     '</div>';
   }
 
@@ -499,8 +563,20 @@
     } else {
       bulkActionBar.classList.add('d-none');
     }
-    if (selectAllCheckbox) selectAllCheckbox.checked = false;
-    if (selectAllCheckboxHeader) selectAllCheckboxHeader.checked = false;
+    const pageBoxes = document.querySelectorAll('#taskList .task-checkbox, #mobileTaskList .task-checkbox');
+    const total = pageBoxes.length;
+    let checkedCount = 0;
+    pageBoxes.forEach(function (cb) { if (cb.checked) checkedCount++; });
+    const allChecked = total > 0 && checkedCount === total;
+    const someChecked = checkedCount > 0 && checkedCount < total;
+    if (selectAllCheckbox) {
+      selectAllCheckbox.checked = allChecked;
+      selectAllCheckbox.indeterminate = someChecked;
+    }
+    if (selectAllCheckboxHeader) {
+      selectAllCheckboxHeader.checked = allChecked;
+      selectAllCheckboxHeader.indeterminate = someChecked;
+    }
   }
 
   function setTheme(theme) {
@@ -572,18 +648,30 @@
     updateStats(allTasks);
   }
 
-  function showToast(message, type) {
-    type = type || 'success';
-    const icon = toastIcons[type] || toastIcons.success;
+  function createToastShell(type) {
     const el = document.createElement('div');
     el.className = 'toast align-items-center border-0 text-bg-' + type;
     el.setAttribute('role', 'alert');
     el.setAttribute('aria-live', 'assertive');
     el.setAttribute('aria-atomic', 'true');
-
     const flexDiv = document.createElement('div');
     flexDiv.className = 'd-flex align-items-center p-2';
+    el.appendChild(flexDiv);
+    return { el: el, flexDiv: flexDiv };
+  }
 
+  function mountToast(el, delay) {
+    toastContainer.appendChild(el);
+    const toast = new bootstrap.Toast(el, { autohide: true, delay: delay });
+    toast.show();
+    el.addEventListener('hidden.bs.toast', function () { el.remove(); });
+    return toast;
+  }
+
+  function showToast(message, type) {
+    type = type || 'success';
+    const shell = createToastShell(type);
+    const icon = toastIcons[type] || toastIcons.success;
     const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     iconSvg.setAttribute('width', '20');
     iconSvg.setAttribute('height', '20');
@@ -591,46 +679,28 @@
     iconSvg.setAttribute('class', 'me-2 flex-shrink-0');
     iconSvg.setAttribute('viewBox', '0 0 16 16');
     iconSvg.innerHTML = icon;
-    flexDiv.appendChild(iconSvg);
-
+    shell.flexDiv.appendChild(iconSvg);
     const bodyDiv = document.createElement('div');
     bodyDiv.className = 'toast-body';
     bodyDiv.textContent = message;
-    flexDiv.appendChild(bodyDiv);
-
+    shell.flexDiv.appendChild(bodyDiv);
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'btn-close btn-close-white me-2 m-auto';
     closeBtn.setAttribute('data-bs-dismiss', 'toast');
-    flexDiv.appendChild(closeBtn);
-
-    el.appendChild(flexDiv);
-
+    shell.flexDiv.appendChild(closeBtn);
     const progress = document.createElement('div');
     progress.className = 'toast-progress';
-    el.appendChild(progress);
-
-    toastContainer.appendChild(el);
-    const toast = new bootstrap.Toast(el, { autohide: true, delay: 3000 });
-    toast.show();
-    el.addEventListener('hidden.bs.toast', function () { el.remove(); });
+    shell.el.appendChild(progress);
+    mountToast(shell.el, 3000);
   }
 
   function showUndoDeleteToast(taskName) {
-    const el = document.createElement('div');
-    el.className = 'toast align-items-center border-0 text-bg-danger';
-    el.setAttribute('role', 'alert');
-    el.setAttribute('aria-live', 'assertive');
-    el.setAttribute('aria-atomic', 'true');
-
-    const flexDiv = document.createElement('div');
-    flexDiv.className = 'd-flex align-items-center p-2';
-
+    const shell = createToastShell('danger');
     const bodyDiv = document.createElement('div');
     bodyDiv.className = 'toast-body';
     bodyDiv.textContent = 'Deleted "' + taskName + '"';
-    flexDiv.appendChild(bodyDiv);
-
+    shell.flexDiv.appendChild(bodyDiv);
     const undoBtn = document.createElement('button');
     undoBtn.type = 'button';
     undoBtn.className = 'btn btn-sm btn-light me-2';
@@ -648,20 +718,13 @@
         showToast('Task restored!', 'success');
       }
     });
-    flexDiv.appendChild(undoBtn);
-
+    shell.flexDiv.appendChild(undoBtn);
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'btn-close btn-close-white me-2 m-auto';
     closeBtn.setAttribute('data-bs-dismiss', 'toast');
-    flexDiv.appendChild(closeBtn);
-
-    el.appendChild(flexDiv);
-
-    toastContainer.appendChild(el);
-    const toast = new bootstrap.Toast(el, { autohide: true, delay: 5000 });
-    toast.show();
-    el.addEventListener('hidden.bs.toast', function () { el.remove(); });
+    shell.flexDiv.appendChild(closeBtn);
+    const toast = mountToast(shell.el, 5000);
   }
 
   function setFormLoading(loading) {
@@ -680,11 +743,26 @@
     setFormLoading(false);
   }
 
+  function parseTags(str) {
+    if (!str) return [];
+    const out = [];
+    const seen = new Set();
+    String(str).split(/[;,]/).forEach(function (part) {
+      const t = part.trim();
+      if (t && !seen.has(t.toLowerCase())) {
+        seen.add(t.toLowerCase());
+        out.push(t);
+      }
+    });
+    return out;
+  }
+
   function getFormData() {
     return {
       id: editId,
       name: fieldName.value.trim(),
       description: fieldDesc.value.trim(),
+      tags: parseTags(fieldTags.value),
       priority: fieldPriority.value,
       status: fieldStatus.value,
       dueDate: fieldDueDate.value,
@@ -694,6 +772,7 @@
   function setFormData(task) {
     fieldName.value = task.name || '';
     fieldDesc.value = task.description || '';
+    fieldTags.value = (task.tags || []).join(', ');
     fieldPriority.value = task.priority || 'Medium';
     fieldStatus.value = task.status || 'Pending';
     fieldDueDate.value = task.dueDate || '';
@@ -760,15 +839,25 @@
     handleSave(getFormData());
   });
 
+  form.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      if (!validateForm()) return;
+      setFormLoading(true);
+      handleSave(getFormData());
+    }
+  });
+
   function handleTaskAction(e) {
-    const item = e.target.closest('[class*="action-"]');
+    const item = e.target.closest('[data-action]');
     if (!item) return;
     const id = item.dataset.id;
-    if (item.classList.contains('action-edit')) {
+    const action = item.dataset.action;
+    if (action === 'edit') {
       const task = loadTasks().find(function (t) { return t.id === id; });
       if (task) openForm(task);
     }
-    if (item.classList.contains('action-delete')) {
+    if (action === 'delete') {
       confirmThen('Delete Task', 'Are you sure you want to delete this task?', function () {
         const tasks = loadTasks();
         const task = tasks.find(function (t) { return t.id === id; });
@@ -784,7 +873,7 @@
         refresh();
       }, 'danger');
     }
-    if (item.classList.contains('action-copy')) {
+    if (action === 'copy') {
       confirmThen('Duplicate Task', 'Create a copy of this task?', function () {
         duplicateTask(id);
         confirmModal.hide();
@@ -822,10 +911,106 @@
     confirmBtnText.textContent = 'Confirm';
   });
 
+  function populateTagFilter(allTasks) {
+    if (!tagFilter) return;
+    const tags = new Set();
+    allTasks.forEach(function (t) {
+      (t.tags || []).forEach(function (tag) { if (tag) tags.add(tag); });
+    });
+    const sorted = Array.from(tags).sort(function (a, b) {
+      return a.toLowerCase().localeCompare(b.toLowerCase());
+    });
+    if (sorted.length === 0) {
+      tagFilter.innerHTML = '<span class="text-muted small">No tags yet</span>';
+      return;
+    }
+    tagFilter.innerHTML = sorted.map(function (tag) {
+      const active = selectedTags.has(tag) ? ' active' : '';
+      return '<button type="button" class="tag-chip' + active + '" data-tag="' + escapeHtml(tag) + '">' + escapeHtml(tag) + '</button>';
+    }).join('');
+  }
+
+  if (tagFilter) {
+    tagFilter.addEventListener('click', function (e) {
+      const chip = e.target.closest('.tag-chip');
+      if (!chip) return;
+      const tag = chip.dataset.tag;
+      if (selectedTags.has(tag)) selectedTags.delete(tag);
+      else selectedTags.add(tag);
+      refresh();
+    });
+  }
+
   function refresh() {
     let all = loadTasks();
     let filtered = applyFilters(all);
+    populateTagFilter(all);
+    renderActiveFilters();
+    updateSidebarFromFilter();
     render(all, filtered);
+  }
+
+  function renderActiveFilters() {
+    const el = document.getElementById('activeFilters');
+    if (!el) return;
+    const chips = [];
+    const state = getFilterState();
+    if (state.status) {
+      chips.push({ label: 'Status: ' + state.status, clear: function () { filterStatus.value = ''; } });
+    }
+    if (state.priority) {
+      chips.push({ label: 'Priority: ' + state.priority, clear: function () { filterPriority.value = ''; } });
+    }
+    if (state.dueDateFilter) {
+      chips.push({ label: 'Date: ' + formatDate(state.dueDateFilter), clear: function () { filterDueDate.value = ''; } });
+    }
+    if (chips.length === 0) {
+      el.classList.add('d-none');
+      el.innerHTML = '';
+      return;
+    }
+    el.classList.remove('d-none');
+    el.innerHTML = chips.map(function (c, idx) {
+      return '<span class="filter-chip">' + escapeHtml(c.label) +
+        '<button type="button" aria-label="Remove filter" data-idx="' + idx + '">' +
+        '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>' +
+        '</button></span>';
+    }).join('');
+    el._chips = chips;
+  }
+
+  if (document.getElementById('activeFilters')) {
+    document.getElementById('activeFilters').addEventListener('click', function (e) {
+      const btn = e.target.closest('button[data-idx]');
+      if (!btn) return;
+      const chips = this._chips || [];
+      const chip = chips[parseInt(btn.dataset.idx, 10)];
+      if (chip) { chip.clear(); selectedIds.clear(); currentPage = 1; refresh(); }
+    });
+  }
+
+  const sidebarNav = document.getElementById('sidebarNav');
+  if (sidebarNav) {
+    sidebarNav.addEventListener('click', function (e) {
+      const item = e.target.closest('.nav-item');
+      if (!item) return;
+      e.preventDefault();
+      const nav = item.dataset.nav;
+      filterStatus.value = nav === 'all' ? '' : nav;
+      selectedIds.clear();
+      currentPage = 1;
+      refresh();
+    });
+  }
+
+  function updateSidebarFromFilter() {
+    if (!sidebarNav) return;
+    const current = filterStatus.value;
+    sidebarNav.querySelectorAll('.nav-item').forEach(function (item) {
+      const nav = item.dataset.nav;
+      const active = (nav === 'all' && !current) || (nav === current);
+      item.classList.toggle('active', active);
+    });
   }
 
   paginationList.addEventListener('click', function (e) {

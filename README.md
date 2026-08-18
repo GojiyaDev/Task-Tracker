@@ -13,8 +13,8 @@ A modern, lightweight task management application built with **HTML, CSS, JavaSc
 
 - Create, edit, duplicate, and delete tasks
 - Search tasks instantly
-- Filter by status, priority, and tags
-- Sort tasks by name, status, or assigned date
+- Filter by status, priority, assign date, and multiple tags
+- Tag tasks for categorization
 - Pagination for improved navigation
 - Bulk actions (delete or mark completed)
 - Excel import and export (.xlsx)
