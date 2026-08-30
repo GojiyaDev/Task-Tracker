@@ -14,6 +14,7 @@
 
   const STORAGE_KEY = 'taskTracker_tasks';
   const THEME_KEY = 'taskTracker_theme';
+  const TAGS_KEY = 'taskTracker_tags';
 
   // DOM Elements - Main Layout & Views
   const emptyState     = document.getElementById('emptyState');
@@ -90,12 +91,17 @@
   const fieldPriority  = document.getElementById('taskPriority');
   const fieldStatus    = document.getElementById('taskStatus');
   const fieldDueDate   = document.getElementById('taskDueDate');
-  const fieldTags      = document.getElementById('taskTags');
-  const fieldBlockedBy = document.getElementById('taskBlockedBy');
-  const fieldTimeSpent = document.getElementById('taskTimeSpent');
+  const taskTagsContainer = document.getElementById('taskTagsContainer');
   const subtaskBuilderList = document.getElementById('subtaskBuilderList');
   const newSubtaskInput = document.getElementById('newSubtaskInput');
   const addSubtaskBtn   = document.getElementById('addSubtaskBtn');
+
+  // Manage Tags Elements
+  const tagsModalEl          = document.getElementById('tagsModal');
+  const sidebarManageTagsBtn = document.getElementById('sidebarManageTagsBtn');
+  const newTagInputGlobal    = document.getElementById('newTagInputGlobal');
+  const addTagBtnGlobal      = document.getElementById('addTagBtnGlobal');
+  const globalTagsList       = document.getElementById('globalTagsList');
 
   // Task Detail Modal Elements
   const taskDetailModalEl  = document.getElementById('taskDetailModal');
@@ -359,6 +365,37 @@
   // avoids re-parsing / re-serializing localStorage on every filter, search,
   // or action.
   let taskCache = [];
+  let globalTags = [];
+
+  function loadGlobalTags() {
+    try {
+      const raw = localStorage.getItem(TAGS_KEY);
+      if (raw !== null) {
+        globalTags = JSON.parse(raw);
+        if (!Array.isArray(globalTags)) globalTags = [];
+      } else {
+        const tasks = readRaw();
+        const tagSet = new Set();
+        tasks.forEach(function (t) {
+          (t.tags || []).forEach(function (tag) {
+            if (tag) tagSet.add(tag);
+          });
+        });
+        globalTags = Array.from(tagSet).sort();
+        saveGlobalTags();
+      }
+    } catch (e) {
+      globalTags = [];
+    }
+  }
+
+  function saveGlobalTags() {
+    try {
+      localStorage.setItem(TAGS_KEY, JSON.stringify(globalTags));
+    } catch (e) {
+      showToast('Failed to save tags.', 'danger');
+    }
+  }
 
   function readRaw() {
     try {
@@ -946,8 +983,35 @@
     } else if (viewName === 'analytics') {
       pageTitle.textContent = 'Productivity Metrics';
       pageSubtitle.textContent = 'Velocity, time logging, and project distribution analytics';
+    } else if (viewName === 'dailyTasks') {
+      pageTitle.textContent = 'Daily Tasks';
+      pageSubtitle.textContent = 'Track daily activities with a habit spreadsheet';
     }
-    refresh();
+
+    if (viewName === 'dailyTasks') {
+      statsContainer.classList.add('d-none');
+      filterBar.classList.add('d-none');
+      activeFiltersEl.classList.add('d-none');
+      tagFilter.classList.add('d-none');
+      bulkActionBar.classList.add('d-none');
+      emptyState.classList.add('d-none');
+      noResultsState.classList.add('d-none');
+      taskGrid.classList.add('d-none');
+      kanbanBoard.classList.add('d-none');
+      analyticsView.classList.add('d-none');
+      dailyTasksView.classList.remove('d-none');
+      viewSwitcher.classList.add('d-none');
+      addTaskBtnDesktop.style.display = 'none';
+      dtRender();
+      updateSidebarNavigation();
+    } else {
+      dailyTasksView.classList.add('d-none');
+      statsContainer.classList.remove('d-none');
+      viewSwitcher.classList.remove('d-none');
+      addTaskBtnDesktop.style.display = '';
+      tagFilter.classList.remove('d-none');
+      refresh();
+    }
   }
 
   function setTheme(theme) {
@@ -969,6 +1033,18 @@
   }
 
   function render(allTasks, filteredTasks) {
+    // Daily Tasks has its own rendering; keep the dashboard hidden if a
+    // refresh is triggered while it is the active view.
+    if (currentView === 'dailyTasks') {
+      emptyState.classList.add('d-none');
+      noResultsState.classList.add('d-none');
+      taskGrid.classList.add('d-none');
+      kanbanBoard.classList.add('d-none');
+      analyticsView.classList.add('d-none');
+      filterBar.classList.add('d-none');
+      dailyTasksView.classList.remove('d-none');
+      return;
+    }
     let hasTasks = allTasks.length > 0;
     let hasResults = filteredTasks.length > 0;
 
@@ -1177,6 +1253,7 @@
     editId = null;
     tempSubtasks = [];
     renderSubtaskBuilder();
+    renderTaskTagsCheckboxList([]);
     modalTitle.textContent = 'Add New Task';
     setFormLoading(false);
   }
@@ -1195,17 +1272,36 @@
     return out;
   }
 
+  function renderTaskTagsCheckboxList(selected) {
+    if (globalTags.length === 0) {
+      taskTagsContainer.innerHTML = '<span class="text-muted small">No tags available. Go to Developer Tools -> Manage Tags.</span>';
+      return;
+    }
+    const selSet = new Set(selected || []);
+    taskTagsContainer.innerHTML = globalTags.map(function(tag) {
+      const isChecked = selSet.has(tag) ? 'checked' : '';
+      return '<div class="form-check form-check-inline">' +
+        '<input class="form-check-input task-tag-cb" type="checkbox" id="ttcb_' + escapeHtml(tag) + '" value="' + escapeHtml(tag) + '" ' + isChecked + '>' +
+        '<label class="form-check-label" for="ttcb_' + escapeHtml(tag) + '">' + escapeHtml(tag) + '</label>' +
+      '</div>';
+    }).join('');
+  }
+
   function getFormData() {
+    const selectedTags = [];
+    if (taskTagsContainer) {
+      taskTagsContainer.querySelectorAll('.task-tag-cb:checked').forEach(function(cb) {
+        selectedTags.push(cb.value);
+      });
+    }
     return {
       id: editId,
       name: fieldName.value.trim(),
       description: fieldDesc.value.trim(),
-      tags: parseTags(fieldTags.value),
+      tags: selectedTags,
       priority: fieldPriority.value,
       status: fieldStatus.value,
       dueDate: fieldDueDate.value,
-      blockedBy: fieldBlockedBy.value.trim(),
-      timeSpent: parseInt(fieldTimeSpent.value, 10) || 0,
       subtasks: tempSubtasks
     };
   }
@@ -1213,12 +1309,10 @@
   function setFormData(task) {
     fieldName.value = task.name || '';
     fieldDesc.value = task.description || '';
-    fieldTags.value = (task.tags || []).join(', ');
+    renderTaskTagsCheckboxList(task.tags || []);
     fieldPriority.value = task.priority || 'Medium';
     fieldStatus.value = task.status || 'Pending';
     fieldDueDate.value = task.dueDate || '';
-    fieldBlockedBy.value = task.blockedBy || '';
-    fieldTimeSpent.value = task.timeSpent || 0;
     tempSubtasks = Array.isArray(task.subtasks) ? JSON.parse(JSON.stringify(task.subtasks)) : [];
     renderSubtaskBuilder();
   }
@@ -1626,6 +1720,99 @@
     });
   }
 
+  function renderManageTagsList() {
+    if (globalTags.length === 0) {
+      globalTagsList.innerHTML = '<div class="text-muted text-center py-3 small">No tags created yet.</div>';
+      return;
+    }
+    globalTagsList.innerHTML = globalTags.map(function (tag) {
+      return '<div class="list-group-item d-flex justify-content-between align-items-center">' +
+        '<span>' + escapeHtml(tag) + '</span>' +
+        '<div>' +
+          '<button class="btn btn-sm btn-outline-secondary edit-tag-btn me-2" data-tag="' + escapeHtml(tag) + '">Edit</button>' +
+          '<button class="btn btn-sm btn-outline-danger delete-tag-btn" data-tag="' + escapeHtml(tag) + '">Delete</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  if (sidebarManageTagsBtn) {
+    sidebarManageTagsBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      newTagInputGlobal.value = '';
+      renderManageTagsList();
+      tagsModalInst.show();
+    });
+  }
+
+  if (addTagBtnGlobal) {
+    addTagBtnGlobal.addEventListener('click', function () {
+      const val = newTagInputGlobal.value.trim();
+      if (!val) return;
+      if (globalTags.some(function(t) { return t.toLowerCase() === val.toLowerCase(); })) {
+        showToast('Tag already exists.', 'warning');
+        return;
+      }
+      globalTags.push(val);
+      globalTags.sort();
+      saveGlobalTags();
+      newTagInputGlobal.value = '';
+      renderManageTagsList();
+    });
+  }
+
+  if (globalTagsList) {
+    globalTagsList.addEventListener('click', function (e) {
+      if (e.target.classList.contains('delete-tag-btn')) {
+        const tagToDel = e.target.getAttribute('data-tag');
+        globalTags = globalTags.filter(function(t) { return t !== tagToDel; });
+        saveGlobalTags();
+        
+        const tasks = loadTasks();
+        let modified = false;
+        tasks.forEach(function (t) {
+          if (t.tags && t.tags.includes(tagToDel)) {
+            t.tags = t.tags.filter(function(tag) { return tag !== tagToDel; });
+            modified = true;
+          }
+        });
+        if (modified) {
+          saveTasks(tasks);
+          refresh();
+        }
+        renderManageTagsList();
+      } else if (e.target.classList.contains('edit-tag-btn')) {
+        const oldTag = e.target.getAttribute('data-tag');
+        const newTag = prompt('Edit tag name:', oldTag);
+        if (newTag !== null && newTag.trim() !== '') {
+          const val = newTag.trim();
+          if (val === oldTag) return;
+          if (globalTags.some(function(t) { return t.toLowerCase() === val.toLowerCase(); })) {
+            showToast('Tag already exists.', 'warning');
+            return;
+          }
+          globalTags = globalTags.map(function(t) { return t === oldTag ? val : t; });
+          globalTags.sort();
+          saveGlobalTags();
+          
+          const tasks = loadTasks();
+          let modified = false;
+          tasks.forEach(function (t) {
+            if (t.tags && t.tags.includes(oldTag)) {
+              t.tags = t.tags.map(function(tag) { return tag === oldTag ? val : tag; });
+              modified = true;
+            }
+          });
+          if (modified) {
+            saveTasks(tasks);
+            refresh();
+          }
+          renderManageTagsList();
+        }
+      }
+    });
+  }
+
   // Command Palette Engine (Ctrl+K)
   function buildCommandPaletteItems(query) {
     const q = (query || '').toLowerCase().trim();
@@ -1636,9 +1823,10 @@
     items.push({ category: 'Views', title: 'Switch to List View', icon: '📋', action: function () { switchView('list'); } });
     items.push({ category: 'Views', title: 'Switch to Kanban Board', icon: '📊', action: function () { switchView('kanban'); } });
     items.push({ category: 'Views', title: 'Switch to Metrics / Analytics', icon: '📈', action: function () { switchView('analytics'); } });
+    items.push({ category: 'Views', title: 'Switch to Daily Tasks', icon: '📅', kbd: 'D', action: function () { switchView('dailyTasks'); } });
 
     // Actions
-    items.push({ category: 'Actions', title: 'Add New Task', icon: '➕', kbd: 'N', action: function () { openForm(); } });
+    items.push({ category: 'Actions', title: 'Add New Task', icon: '➕', kbd: 'N', action: function () { if (currentView === 'dailyTasks') dtOpenAddModal(null); else openForm(); } });
     items.push({ category: 'Actions', title: 'Generate Daily Standup Summary', icon: '📝', kbd: 'S', action: generateStandupReport });
     items.push({ category: 'Actions', title: 'Toggle Dark / Light Theme', icon: '🌓', kbd: 'T', action: toggleTheme });
     items.push({ category: 'Actions', title: 'Export Backup as JSON', icon: '💾', action: exportToJson });
@@ -1860,6 +2048,8 @@
         switchView('kanban');
       } else if (nav === 'analytics') {
         switchView('analytics');
+      } else if (nav === 'dailyTasks') {
+        switchView('dailyTasks');
       } else {
         switchView('list');
         filterStatus.value = nav === 'all' ? '' : nav;
@@ -1875,7 +2065,9 @@
     const currentStatus = filterStatus.value;
     sidebarNav.querySelectorAll('.nav-item[data-nav]').forEach(function (item) {
       const nav = item.dataset.nav;
-      if (currentView === 'kanban') {
+      if (currentView === 'dailyTasks') {
+        item.classList.toggle('active', nav === 'dailyTasks');
+      } else if (currentView === 'kanban') {
         item.classList.toggle('active', nav === 'kanban');
       } else if (currentView === 'analytics') {
         item.classList.toggle('active', nav === 'analytics');
@@ -2406,6 +2598,484 @@
 
   themeToggle.addEventListener('click', toggleTheme);
 
+  // ===========================================================================
+  // Daily Tasks Module — independent habit tracker (own localStorage key).
+  // Spreadsheet-like grid: rows = habits, columns = days.
+  // ===========================================================================
+  const DT_STORAGE_KEY = 'dailyTasksData';
+
+  // DOM Elements
+  const statsContainer   = document.getElementById('statsContainer');
+  const activeFiltersEl  = document.getElementById('activeFilters');
+  const viewSwitcher     = document.getElementById('viewSwitcher');
+  const addTaskBtnDesktop = document.getElementById('addTaskBtnDesktop');
+  const addTaskFab       = document.getElementById('addTaskFab');
+  const dailyTasksView   = document.getElementById('dailyTasksView');
+  const dtSummaryGrid    = document.getElementById('dtSummaryGrid');
+  const dtGridWrap       = document.getElementById('dtGridWrap');
+  const dtEmptyState     = document.getElementById('dtEmptyState');
+  const dtDateLabel      = document.getElementById('dtDateLabel');
+  const dtPrevBtn        = document.getElementById('dtPrevBtn');
+  const dtTodayBtn       = document.getElementById('dtTodayBtn');
+  const dtNextBtn        = document.getElementById('dtNextBtn');
+  const dtViewDaysSelect = document.getElementById('dtViewDays');
+  const dtAddTaskBtn     = document.getElementById('dtAddTaskBtn');
+  const dtEmptyAddBtn    = document.getElementById('dtEmptyAddBtn');
+  const dtModalEl        = document.getElementById('dailyTaskModal');
+  const dtModalTitle     = document.getElementById('dtModalTitle');
+  const dtTaskName       = document.getElementById('dtTaskName');
+  const dtTaskIcon       = document.getElementById('dtTaskIcon');
+  const dtSaveTaskBtn    = document.getElementById('dtSaveTaskBtn');
+
+  // State
+  let dtData = { dailyTasks: [], dailyTaskEntries: {} };
+  let dtCurrentStartDate = null; // ISO date of the first visible day
+  let dtViewDays = 7;            // 7, 14, or 30
+  let dtSelectedCell = null;     // { taskId, date }
+  let dtModalTaskId = null;
+
+  const dtModalInst = new bootstrap.Modal(dtModalEl);
+
+  function dtLoadData() {
+    try {
+      const raw = localStorage.getItem(DT_STORAGE_KEY);
+      if (raw === null) {
+        dtData = { dailyTasks: [], dailyTaskEntries: {} };
+        return;
+      }
+      const parsed = JSON.parse(raw);
+      dtData = {
+        dailyTasks: Array.isArray(parsed.dailyTasks) ? parsed.dailyTasks : [],
+        dailyTaskEntries: parsed.dailyTaskEntries && typeof parsed.dailyTaskEntries === 'object' ? parsed.dailyTaskEntries : {}
+      };
+    } catch (e) {
+      showToast('Could not load daily tasks data.', 'danger');
+      dtData = { dailyTasks: [], dailyTaskEntries: {} };
+    }
+  }
+
+  function dtSaveData() {
+    try {
+      localStorage.setItem(DT_STORAGE_KEY, JSON.stringify(dtData));
+      return true;
+    } catch (e) {
+      showToast('Failed to save daily tasks data.', 'danger');
+      return false;
+    }
+  }
+
+  function dtSetToToday() {
+    const today = new Date();
+    const dow = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + (dow === 0 ? -6 : 1 - dow));
+    dtCurrentStartDate = localDateStr(monday);
+  }
+
+  function dtGetDates() {
+    if (!dtCurrentStartDate) dtSetToToday();
+    const start = new Date(dtCurrentStartDate + 'T00:00:00');
+    const dates = [];
+    for (let i = 0; i < dtViewDays; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      dates.push(localDateStr(d));
+    }
+    return dates;
+  }
+
+  function dtGoToPrevPeriod() {
+    if (!dtCurrentStartDate) dtSetToToday();
+    const d = new Date(dtCurrentStartDate + 'T00:00:00');
+    d.setDate(d.getDate() - dtViewDays);
+    dtCurrentStartDate = localDateStr(d);
+    dtRender();
+  }
+
+  function dtGoToNextPeriod() {
+    if (!dtCurrentStartDate) dtSetToToday();
+    const d = new Date(dtCurrentStartDate + 'T00:00:00');
+    d.setDate(d.getDate() + dtViewDays);
+    dtCurrentStartDate = localDateStr(d);
+    dtRender();
+  }
+
+  function dtGoToToday() {
+    dtSetToToday();
+    dtRender();
+  }
+
+  function dtCalculateStreak(taskId) {
+    const entries = dtData.dailyTaskEntries[taskId] || {};
+    const today = new Date();
+    let cur = new Date(today);
+    if (entries[localDateStr(cur)] !== 'completed') {
+      cur = new Date(today);
+      cur.setDate(cur.getDate() - 1);
+    }
+    let streak = 0;
+    while (entries[localDateStr(cur)] === 'completed') {
+      streak++;
+      cur.setDate(cur.getDate() - 1);
+    }
+    return streak;
+  }
+
+  function dtCalculateWeekCompleted() {
+    const today = new Date();
+    const dow = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + (dow === 0 ? -6 : 1 - dow));
+    let completed = 0;
+    let total = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const iso = localDateStr(d);
+      dtData.dailyTasks.forEach(function (t) {
+        total++;
+        if (dtData.dailyTaskEntries[t.id] && dtData.dailyTaskEntries[t.id][iso] === 'completed') completed++;
+      });
+    }
+    return { pct: total > 0 ? Math.round((completed / total) * 100) : 0, completed: completed, total: total };
+  }
+
+  function dtCalculateCompletionRate(dates) {
+    let completed = 0;
+    let total = 0;
+    dates.forEach(function (dateStr) {
+      dtData.dailyTasks.forEach(function (t) {
+        total++;
+        if (dtData.dailyTaskEntries[t.id] && dtData.dailyTaskEntries[t.id][dateStr] === 'completed') completed++;
+      });
+    });
+    return { pct: total > 0 ? Math.round((completed / total) * 100) : 0, completed: completed, total: total };
+  }
+
+  function dtMakeSummaryCard(label, value, sub) {
+    const card = document.createElement('div');
+    card.className = 'dt-summary-card';
+    const l = document.createElement('span');
+    l.className = 'dt-summary-label';
+    l.textContent = label;
+    const v = document.createElement('div');
+    v.className = 'dt-summary-value';
+    v.textContent = value;
+    const s = document.createElement('div');
+    s.className = 'dt-summary-sub';
+    s.textContent = sub;
+    card.appendChild(l);
+    card.appendChild(v);
+    card.appendChild(s);
+    return card;
+  }
+
+  function dtRenderSummaryCards(dates) {
+    const today = localDateStr(new Date());
+    const totalTasks = dtData.dailyTasks.length;
+    let doneToday = 0;
+    dtData.dailyTasks.forEach(function (t) {
+      if (dtData.dailyTaskEntries[t.id] && dtData.dailyTaskEntries[t.id][today] === 'completed') doneToday++;
+    });
+    const todayPct = totalTasks > 0 ? Math.round((doneToday / totalTasks) * 100) : 0;
+
+    let bestStreak = 0;
+    dtData.dailyTasks.forEach(function (t) { bestStreak = Math.max(bestStreak, dtCalculateStreak(t.id)); });
+    const week = dtCalculateWeekCompleted();
+    const rate = dtCalculateCompletionRate(dates);
+
+    dtSummaryGrid.innerHTML = '';
+    dtSummaryGrid.appendChild(dtMakeSummaryCard(
+      'Today\'s Progress',
+      todayPct + '%',
+      doneToday + ' of ' + totalTasks + ' habits done today'
+    ));
+    dtSummaryGrid.appendChild(dtMakeSummaryCard(
+      'Best Streak',
+      bestStreak + ' day' + (bestStreak === 1 ? '' : 's'),
+      'Longest active streak'
+    ));
+    dtSummaryGrid.appendChild(dtMakeSummaryCard(
+      'This Week',
+      week.pct + '%',
+      week.completed + ' of ' + week.total + ' task-days complete'
+    ));
+    dtSummaryGrid.appendChild(dtMakeSummaryCard(
+      'Completion Rate',
+      rate.pct + '%',
+      rate.completed + ' of ' + rate.total + ' task-days in view'
+    ));
+  }
+
+  function dtUpdateDateLabel(dates) {
+    if (!dates.length) return;
+    dtDateLabel.textContent = formatDate(dates[0]) + ' — ' + formatDate(dates[dates.length - 1]);
+  }
+
+  function dtApplySelection() {
+    if (!dtSelectedCell) return;
+    const cell = dtGridWrap.querySelector('.dt-cell[data-task-id="' + dtSelectedCell.taskId + '"][data-date="' + dtSelectedCell.date + '"]');
+    if (cell) cell.classList.add('dt-cell-selected');
+    else dtSelectedCell = null;
+  }
+
+  function dtClearSelection() {
+    dtSelectedCell = null;
+    dtGridWrap.querySelectorAll('.dt-cell-selected').forEach(function (el) { el.classList.remove('dt-cell-selected'); });
+  }
+
+  function dtRenderGrid(dates) {
+    const today = localDateStr(new Date());
+    let html = '<table class="dt-table"><thead><tr>';
+    html += '<th class="dt-col-fixed">Habit</th>';
+    dates.forEach(function (dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      html += '<th class="' + (dateStr === today ? 'dt-col-today' : '') + '">' +
+        '<span class="dt-day-name">' + d.toLocaleDateString('en-US', { weekday: 'short' }) + '</span>' +
+        '<span class="dt-day-num">' + d.getDate() + '</span>' +
+      '</th>';
+    });
+    html += '</tr></thead><tbody>';
+
+    dtData.dailyTasks.forEach(function (task) {
+      const streak = dtCalculateStreak(task.id);
+      html += '<tr><td class="dt-col-fixed"><div class="dt-task-name">';
+      if (task.icon) html += '<span class="dt-task-icon">' + escapeHtml(task.icon) + '</span>';
+      html += '<span class="dt-task-label">' + escapeHtml(task.name) + '</span>';
+      if (streak > 0) html += '<span class="dt-streak-badge" title="Day streak">🔥 ' + streak + '</span>';
+      html += '<div class="dt-task-menu">' +
+        '<button class="dt-menu-btn dt-menu-edit" type="button" data-id="' + task.id + '" title="Edit habit">' +
+          '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>' +
+        '</button>' +
+        '<button class="dt-menu-btn dt-menu-delete" type="button" data-id="' + task.id + '" title="Delete habit">' +
+          '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/></svg>' +
+        '</button>' +
+      '</div></div></td>';
+
+      dates.forEach(function (dateStr) {
+        const entry = dtData.dailyTaskEntries[task.id] ? dtData.dailyTaskEntries[task.id][dateStr] : '';
+        const cls = entry === 'completed' ? 'dt-cell-completed' : (entry === 'not-completed' ? 'dt-cell-not-completed' : 'dt-cell-empty');
+        let content = '';
+        if (entry === 'completed') {
+          content = '<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M13.485 1.431a1.473 1.473 0 0 1 2.104 2.062l-7.84 9.801a1.473 1.473 0 0 1-2.12.04L.431 8.138a1.473 1.473 0 0 1 2.084-2.083l4.111 4.112 6.82-8.69a1.476 1.476 0 0 1 .039-.046z"/></svg>';
+        } else if (entry === 'not-completed') {
+          content = '<svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>';
+        }
+        html += '<td class="' + (dateStr === today ? 'dt-col-today' : '') + '">' +
+          '<button type="button" class="dt-cell ' + cls + '" data-task-id="' + task.id + '" data-date="' + dateStr + '"' +
+            ' title="' + escapeHtml(task.name) + ' — ' + formatDate(dateStr) + '">' + content + '</button>' +
+        '</td>';
+      });
+      html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    dtGridWrap.innerHTML = html;
+    dtApplySelection();
+  }
+
+  function dtRender() {
+    const dates = dtGetDates();
+    dtUpdateDateLabel(dates);
+    dtRenderSummaryCards(dates);
+
+    const hasTasks = dtData.dailyTasks.length > 0;
+    dtGridWrap.classList.toggle('d-none', !hasTasks);
+    dtEmptyState.classList.toggle('d-none', hasTasks);
+    if (hasTasks) dtRenderGrid(dates);
+  }
+
+  function dtAddTask(name, icon) {
+    const key = name.trim().toLowerCase();
+    if (dtData.dailyTasks.some(function (t) { return t.name.trim().toLowerCase() === key; })) return false;
+    dtData.dailyTasks.push({
+      id: generateID(),
+      name: name.trim(),
+      icon: icon,
+      createdAt: localDateStr(new Date()),
+      order: dtData.dailyTasks.length
+    });
+    return dtSaveData();
+  }
+
+  function dtUpdateTask(id, name, icon) {
+    const task = dtData.dailyTasks.find(function (t) { return t.id === id; });
+    if (!task) return false;
+    const key = name.trim().toLowerCase();
+    if (dtData.dailyTasks.some(function (t) { return t.id !== id && t.name.trim().toLowerCase() === key; })) return false;
+    task.name = name.trim();
+    task.icon = icon;
+    return dtSaveData();
+  }
+
+  function dtDeleteTask(id) {
+    dtData.dailyTasks = dtData.dailyTasks.filter(function (t) { return t.id !== id; });
+    delete dtData.dailyTaskEntries[id];
+    return dtSaveData();
+  }
+
+  function dtToggleCell(taskId, dateStr) {
+    const task = dtData.dailyTasks.find(function (t) { return t.id === taskId; });
+    if (!task) return;
+    const entry = dtData.dailyTaskEntries[taskId] || {};
+    const cur = entry[dateStr] || '';
+    const next = cur === '' ? 'completed' : (cur === 'completed' ? 'not-completed' : '');
+    if (next === '') delete entry[dateStr];
+    else entry[dateStr] = next;
+    dtData.dailyTaskEntries[taskId] = entry;
+    dtSaveData();
+    dtRender();
+  }
+
+  function dtOpenAddModal(taskId) {
+    dtModalTaskId = taskId || null;
+    if (taskId) {
+      const task = dtData.dailyTasks.find(function (t) { return t.id === taskId; });
+      if (!task) return;
+      dtTaskName.value = task.name;
+      dtTaskIcon.value = task.icon || '';
+      dtModalTitle.textContent = 'Edit Habit';
+    } else {
+      dtTaskName.value = '';
+      dtTaskIcon.value = '';
+      dtModalTitle.textContent = 'Add New Habit';
+    }
+    dtModalInst.show();
+  }
+
+  function dtSaveTask() {
+    const name = dtTaskName.value.trim();
+    if (!name) {
+      dtTaskName.classList.add('is-invalid');
+      dtTaskName.focus();
+      return;
+    }
+    const icon = dtTaskIcon.value.trim();
+    const ok = dtModalTaskId ? dtUpdateTask(dtModalTaskId, name, icon) : dtAddTask(name, icon);
+    if (!ok) {
+      showToast('A habit with this name already exists.', 'warning');
+      return;
+    }
+    showToast(dtModalTaskId ? 'Habit updated!' : 'Habit added!', 'success');
+    dtModalInst.hide();
+    dtRender();
+  }
+
+  function dtInitEvents() {
+    if (dtPrevBtn) dtPrevBtn.addEventListener('click', dtGoToPrevPeriod);
+    if (dtNextBtn) dtNextBtn.addEventListener('click', dtGoToNextPeriod);
+    if (dtTodayBtn) dtTodayBtn.addEventListener('click', dtGoToToday);
+    if (dtViewDaysSelect) {
+      dtViewDaysSelect.addEventListener('change', function () {
+        dtViewDays = parseInt(this.value, 10) || 7;
+        dtRender();
+      });
+    }
+    if (dtAddTaskBtn) dtAddTaskBtn.addEventListener('click', function () { dtOpenAddModal(null); });
+    if (dtEmptyAddBtn) dtEmptyAddBtn.addEventListener('click', function () { dtOpenAddModal(null); });
+
+    if (dtGridWrap) {
+      dtGridWrap.addEventListener('click', function (e) {
+        const cell = e.target.closest('.dt-cell');
+        if (cell) {
+          dtSelectedCell = { taskId: cell.dataset.taskId, date: cell.dataset.date };
+          dtToggleCell(cell.dataset.taskId, cell.dataset.date);
+          return;
+        }
+        const editBtn = e.target.closest('.dt-menu-edit');
+        if (editBtn) { dtOpenAddModal(editBtn.dataset.id); return; }
+        const delBtn = e.target.closest('.dt-menu-delete');
+        if (delBtn) {
+          const task = dtData.dailyTasks.find(function (t) { return t.id === delBtn.dataset.id; });
+          if (!task) return;
+          confirmThen('Delete Habit', 'Delete "' + task.name + '" and all of its history?', function () {
+            dtDeleteTask(task.id);
+            confirmModal.hide();
+            showToast('Habit deleted.', 'success');
+            dtRender();
+          }, 'danger');
+        }
+      });
+    }
+
+    if (dtSaveTaskBtn) dtSaveTaskBtn.addEventListener('click', dtSaveTask);
+    if (dtTaskName) {
+      dtTaskName.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); dtSaveTask(); }
+      });
+    }
+    if (dtModalEl) {
+      dtModalEl.addEventListener('hidden.bs.modal', function () {
+        dtTaskName.classList.remove('is-invalid');
+        dtModalTaskId = null;
+      });
+      dtModalEl.addEventListener('shown.bs.modal', function () { dtTaskName.focus(); });
+    }
+
+    if (addTaskBtnDesktop) {
+      addTaskBtnDesktop.addEventListener('click', function () {
+        if (currentView === 'dailyTasks') dtOpenAddModal(null);
+        else openForm();
+      });
+    }
+    if (addTaskFab) {
+      addTaskFab.addEventListener('click', function () {
+        if (currentView === 'dailyTasks') dtOpenAddModal(null);
+        else openForm();
+      });
+    }
+
+    // Grid keyboard navigation (arrows / Enter / Space / Escape)
+    document.addEventListener('keydown', function (e) {
+      const activeEl = document.activeElement;
+      const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT' || activeEl.isContentEditable);
+      if (isTyping) return;
+      if (dailyTasksView.classList.contains('d-none')) return;
+
+      const dates = dtGetDates();
+      const taskIds = dtData.dailyTasks.map(function (t) { return t.id; });
+      if (taskIds.length === 0 || dates.length === 0) return;
+
+      if (!dtSelectedCell) {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          dtSelectedCell = { taskId: taskIds[0], date: dates[0] };
+          dtApplySelection();
+          e.target.blur && e.target.blur();
+        }
+        return;
+      }
+
+      let row = taskIds.indexOf(dtSelectedCell.taskId);
+      let col = dates.indexOf(dtSelectedCell.date);
+      if (row === -1 || col === -1) { dtClearSelection(); return; }
+
+      if (e.key === 'ArrowRight') { e.preventDefault(); col = (col + 1) % dates.length; }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); col = (col - 1 + dates.length) % dates.length; }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); row = (row + 1) % taskIds.length; }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); row = (row - 1 + taskIds.length) % taskIds.length; }
+      else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        dtToggleCell(dtSelectedCell.taskId, dtSelectedCell.date);
+        return;
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        dtClearSelection();
+        return;
+      } else {
+        return;
+      }
+
+      dtSelectedCell = { taskId: taskIds[row], date: dates[col] };
+      dtApplySelection();
+      const cell = dtGridWrap.querySelector('.dt-cell[data-task-id="' + dtSelectedCell.taskId + '"][data-date="' + dtSelectedCell.date + '"]');
+      if (cell) cell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    });
+  }
+
+  dtLoadData();
+  dtInitEvents();
+
   // Keyboard Shortcuts Handler
   document.addEventListener('keydown', function (e) {
     const activeEl = document.activeElement;
@@ -2428,7 +3098,8 @@
     // New task
     if (e.key === 'n' || e.key === 'N') {
       e.preventDefault();
-      openForm();
+      if (currentView === 'dailyTasks') dtOpenAddModal(null);
+      else openForm();
     }
     // Switch views
     if (e.key === 'l' || e.key === 'L') {
@@ -2442,6 +3113,11 @@
     if (e.key === 'a' || e.key === 'A') {
       e.preventDefault();
       switchView('analytics');
+    }
+    // Daily Tasks
+    if (e.key === 'd' || e.key === 'D') {
+      e.preventDefault();
+      switchView('dailyTasks');
     }
     // Theme toggle
     if (e.key === 't' || e.key === 'T') {
@@ -2468,6 +3144,7 @@
   const commandPaletteModal = new bootstrap.Modal(commandPaletteModalEl);
   const standupModal    = new bootstrap.Modal(standupModalEl);
   const shortcutsModal  = new bootstrap.Modal(shortcutsModalEl);
+  const tagsModalInst   = new bootstrap.Modal(tagsModalEl);
 
   modalTask.addEventListener('hidden.bs.modal', resetForm);
   modalTask.addEventListener('shown.bs.modal', function () {
@@ -2515,5 +3192,6 @@
 
   // Initialize App
   taskCache = readRaw();   // load tasks from localStorage once into the in-memory cache
+  loadGlobalTags();
   refresh();
 })();

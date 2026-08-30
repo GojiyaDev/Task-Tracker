@@ -160,8 +160,9 @@ h1, h2, h3, h4, h5, h6 { letter-spacing: -0.01em; color: var(--text); margin: 0;
   justify-content: space-between;
   gap: 16px;
   padding: 22px 32px;
-  flex-wrap: wrap;
 }
+.topbar-left { flex-shrink: 0; }
+.topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .topbar-title { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
 .topbar-subtitle { margin: 2px 0 0; color: var(--text-3); font-size: 0.8125rem; }
 
@@ -1288,8 +1289,218 @@ h1, h2, h3, h4, h5, h6 { letter-spacing: -0.01em; color: var(--text); margin: 0;
   .task-action-menu, #toastContainer, #loadingOverlay,
   .cmd-palette-btn, .view-switcher { display: none !important; }
   .task-list-header, #taskList { display: block !important; }
-  #mobileTaskList, #kanbanBoard, #analyticsView { display: none !important; }
+  #mobileTaskList, #kanbanBoard, #analyticsView, #dailyTasksView { display: none !important; }
   body { background: #fff; color: #000; }
   .task-list-card, .stat-card, .progress-bar-card { box-shadow: none !important; border: 1px solid #ddd !important; }
+}
+
+/* ===================== Daily Tasks / Habit Tracker ===================== */
+.dt-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 20px;
+}
+.dt-summary-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-sm);
+}
+.dt-summary-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.dt-summary-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text);
+}
+.dt-summary-sub {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+
+.dt-nav-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.dt-range-label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.dt-range-select { width: auto; }
+
+.dt-grid-wrapper {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+  max-height: 68vh;
+  overflow-y: auto;
+}
+.dt-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: max-content;
+  font-size: 0.8125rem;
+}
+.dt-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 8px;
+  min-width: 44px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+}
+.dt-table td {
+  padding: 4px;
+  text-align: center;
+  border-bottom: 1px solid var(--border-soft);
+  white-space: nowrap;
+}
+.dt-table tbody tr:last-child td { border-bottom: none; }
+.dt-table tbody tr:hover td:not(.dt-col-fixed) { background: var(--surface-hover); }
+
+.dt-col-fixed {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface);
+  text-align: left;
+}
+.dt-table thead .dt-col-fixed { z-index: 3; }
+
+.dt-day-name { display: block; }
+.dt-day-num { display: block; font-size: 0.875rem; color: var(--text-2); }
+
+.dt-table .dt-col-today { background: var(--primary-container); }
+.dt-table tbody tr:hover td.dt-col-today { background: var(--primary-container); }
+.dt-table .dt-col-today .dt-cell { border-color: var(--primary); }
+
+.dt-task-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 190px;
+  padding: 4px 10px;
+}
+.dt-task-icon { font-size: 1rem; line-height: 1; }
+.dt-task-label {
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+.dt-streak-badge {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: var(--r-full);
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.dt-task-menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.dt-task-name:hover .dt-task-menu { opacity: 1; }
+@media (max-width: 991.98px) {
+  .dt-task-menu { opacity: 1; }
+}
+
+.dt-menu-btn {
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  border: none; background: transparent;
+  border-radius: var(--r-full);
+  color: var(--text-3);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.dt-menu-btn:hover { background: var(--surface-2); color: var(--text); }
+
+.dt-cell {
+  width: 40px; height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-hover);
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.dt-cell:hover { border-color: var(--primary); }
+.dt-cell:active { transform: scale(0.92); }
+.dt-cell-empty { background: var(--surface-hover); }
+.dt-cell-completed {
+  background: var(--success-soft);
+  border-color: var(--success);
+  color: var(--success);
+}
+.dt-cell-not-completed {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.dt-cell-selected {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.dt-empty {
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--r-lg);
+  color: var(--text-3);
+}
+
+[data-theme="dark"] .dt-summary-card,
+[data-theme="dark"] .dt-grid-wrapper { background: var(--surface); border-color: var(--border); }
+[data-theme="dark"] .dt-table td { border-color: var(--border-soft); }
+[data-theme="dark"] .dt-table tbody tr:hover td:not(.dt-col-today) { background: var(--surface-hover); }
+[data-theme="dark"] .dt-col-fixed { background: var(--surface); }
+
+@media (max-width: 1199.98px) {
+  .dt-summary-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 575.98px) {
+  .dt-summary-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .dt-summary-value { font-size: 1.3rem; }
+  .dt-nav-bar .ms-auto { margin-left: 0 !important; }
 }
 
