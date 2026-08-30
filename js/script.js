@@ -1,4 +1,17 @@
 (function () {
+  // ===========================================================================
+  // Developer Task Tracker — application script (single IIFE, no build step).
+  //
+  // Code is organized into logical namespaces (references to the function
+  // declarations below) for readability:
+  //   Utilities      – pure helpers (escaping, formatting, markdown)
+  //   StorageUtils   – localStorage read/write + in-memory cache getters
+  //   TaskState      – task collection: in-memory cache + CRUD mutations
+  //   DOMRenderer    – builds/updates UI from task data
+  //   EventHandlers  – wires DOM events and delegates actions
+  // See the namespace object definitions near the end of this IIFE.
+  // ===========================================================================
+
   const STORAGE_KEY = 'taskTracker_tasks';
   const THEME_KEY = 'taskTracker_theme';
 
@@ -64,9 +77,6 @@
   const analyticsVelocitySub  = document.getElementById('analyticsVelocitySub');
   const analyticsHighPriorityVal = document.getElementById('analyticsHighPriorityVal');
   const analyticsHighPrioritySub = document.getElementById('analyticsHighPrioritySub');
-  const analyticsSubtasksVal  = document.getElementById('analyticsSubtasksVal');
-  const analyticsSubtasksSub  = document.getElementById('analyticsSubtasksSub');
-  const analyticsTimeVal      = document.getElementById('analyticsTimeVal');
   const priorityBreakdownChart = document.getElementById('priorityBreakdownChart');
   const tagsDistributionList  = document.getElementById('tagsDistributionList');
 
@@ -105,7 +115,6 @@
   const detailTags         = document.getElementById('detailTags');
   const copyBranchBtn      = document.getElementById('copyBranchBtn');
   const copyCommitBtn      = document.getElementById('copyCommitBtn');
-  const detailFocusTimerBtn = document.getElementById('detailFocusTimerBtn');
   const detailHistoryList  = document.getElementById('detailHistoryList');
   const detailEditBtn      = document.getElementById('detailEditBtn');
 
@@ -114,13 +123,6 @@
   const cmdPaletteBtn         = document.getElementById('cmdPaletteBtn');
   const cmdPaletteInput       = document.getElementById('cmdPaletteInput');
   const cmdPaletteResults     = document.getElementById('cmdPaletteResults');
-
-  // Focus Timer Elements
-  const focusTimerWidget = document.getElementById('focusTimerWidget');
-  const timerDisplay     = document.getElementById('timerDisplay');
-  const timerToggleBtn   = document.getElementById('timerToggleBtn');
-  const timerToggleIcon  = document.getElementById('timerToggleIcon');
-  const timerResetBtn    = document.getElementById('timerResetBtn');
 
   // Daily Standup Elements
   const standupModalEl    = document.getElementById('standupModal');
@@ -166,13 +168,6 @@
   let tempSubtasks = [];
   let cmdPaletteActiveIndex = 0;
   let cmdPaletteItems = [];
-
-  // Focus Timer State
-  let timerDuration = 25 * 60; // 25 mins in seconds
-  let timerRemaining = 25 * 60;
-  let timerInterval = null;
-  let timerIsRunning = false;
-  let timerActiveTaskId = null;
 
   const priorityClass = {
     Low: 'pill-low',
@@ -253,12 +248,6 @@
     return 1;
   }
 
-  function priorityArrow(p) {
-    if (p === 'High') return '<span class="priority-arrow">&#9650;</span>';
-    if (p === 'Low') return '<span class="priority-arrow">&#9660;</span>';
-    return '<span class="priority-arrow">&#8212;</span>';
-  }
-
   function getDueDateInfo(task) {
     if (!task.dueDate || task.status === 'Completed') return { cls: '', label: '' };
     const today = localDateStr(new Date());
@@ -269,63 +258,95 @@
     return { cls: '', label: '' };
   }
 
-  // Safe Markdown Light Parser
+  // Safe Markdown Light Parser.
+  // Hardened: escape-first (blocks raw-HTML/XSS), block elements parsed line by
+  // line so lists/quotes/code never merge or leave unbalanced tags, and inline
+  // code is protected from the emphasis/link passes.
   function parseMarkdown(text) {
     if (!text) return '<p class="text-muted mb-0">No description provided.</p>';
-    let html = escapeHtml(text);
 
-    // Code blocks ```code```
-    html = html.replace(/```([\s\S]*?)```/g, function (match, p1) {
-      return '<pre><code>' + p1.trim() + '</code></pre>';
-    });
+    const escaped = escapeHtml(text);
+    const lines = escaped.split('\n');
 
-    // Inline code `code`
-    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    const codeStore = [];
+    function stash(html) {
+      codeStore.push(html);
+      return '<<CODE' + (codeStore.length - 1) + '>>';
+    }
 
-    // Bold **text**
-    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    const blocks = [];
+    let paraBuffer = [];
+    let listBuffer = [];
 
-    // Italic *text*
-    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
-    // Blockquotes > text
-    html = html.replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>');
-
-    // Unordered lists - item
-    html = html.replace(/^-\s+(.+)$/gm, '<li>$1</li>');
-    html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
-
-    // Links [title](url)
-    html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-
-    // Paragraphs & Line Breaks
-    html = html.split(/\n\n+/).map(function (block) {
-      if (block.startsWith('<pre>') || block.startsWith('<ul>') || block.startsWith('<blockquote>')) {
-        return block;
+    function flushPara() {
+      if (paraBuffer.length) {
+        blocks.push('<p class="mb-2">' + paraBuffer.join('<br>') + '</p>');
+        paraBuffer = [];
       }
-      return '<p class="mb-2">' + block.replace(/\n/g, '<br>') + '</p>';
-    }).join('');
+    }
+    function flushList() {
+      if (listBuffer.length) {
+        blocks.push('<ul>' + listBuffer.join('') + '</ul>');
+        listBuffer = [];
+      }
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      // Fenced code block ```
+      if (/^```/.test(line)) {
+        flushPara();
+        flushList();
+        const codeLines = [];
+        i++;
+        while (i < lines.length && !/^```/.test(lines[i])) {
+          codeLines.push(lines[i]);
+          i++;
+        }
+        blocks.push(stash('<pre><code>' + codeLines.join('\n') + '</code></pre>'));
+        continue;
+      }
+
+      // Blockquote (escaped as &gt;)
+      const bq = line.match(/^&gt;\s+(.*)$/);
+      if (bq) {
+        flushPara();
+        flushList();
+        blocks.push('<blockquote>' + bq[1] + '</blockquote>');
+        continue;
+      }
+
+      // Unordered list item (consecutive items fold into one <ul>)
+      const li = line.match(/^-\s+(.*)$/);
+      if (li) {
+        flushPara();
+        listBuffer.push('<li>' + li[1] + '</li>');
+        continue;
+      }
+
+      if (line.trim() === '') {
+        flushPara();
+        flushList();
+        continue;
+      }
+
+      flushList();
+      paraBuffer.push(line);
+    }
+    flushPara();
+    flushList();
+
+    let html = blocks.join('\n');
+
+    // Inline code first, then protect it from emphasis/link passes
+    html = html.replace(/`([^`]+)`/g, function (m, c) { return stash('<code>' + c + '</code>'); });
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+    html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    html = html.replace(/<<CODE(\d+)>>/g, function (m, n) { return codeStore[+n]; });
 
     return html;
-  }
-
-  // Sound generator for Focus Timer alert (using Web Audio API, zero dependencies)
-  function playTimerAlertSound() {
-    try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContext) return;
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
-      gain.gain.setValueAtTime(0.15, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.6);
-    } catch (e) {}
   }
 
   // Schema & Task Persistence with Seamless Backward Compatibility
@@ -333,7 +354,13 @@
     return obj && typeof obj === 'object' && typeof obj.id === 'string' && typeof obj.name === 'string';
   }
 
-  function loadTasks() {
+  // In-memory task cache. Loaded once from localStorage at startup (readRaw);
+  // reads are served from here via loadTasks(), and writes persist back. This
+  // avoids re-parsing / re-serializing localStorage on every filter, search,
+  // or action.
+  let taskCache = [];
+
+  function readRaw() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw === null) return [];
@@ -351,18 +378,33 @@
         return t;
       });
     } catch (e) {
+      showToast('Could not load saved tasks. Stored data may be corrupted.', 'danger');
       return [];
     }
   }
 
-  function saveTasks(tasks) {
+  function writeRaw(tasks) {
     if (!Array.isArray(tasks)) return false;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
       return true;
     } catch (e) {
+      if (e && e.name === 'QuotaExceededError') {
+        showToast('Storage is full — your latest changes were not saved.', 'danger');
+      } else {
+        showToast('Failed to save tasks to local storage.', 'danger');
+      }
       return false;
     }
+  }
+
+  // Thin getter over the in-memory cache. All reads should use this.
+  function loadTasks() {
+    return taskCache;
+  }
+
+  function saveTasks(tasks) {
+    return writeRaw(tasks);
   }
 
   function generateID() {
@@ -425,8 +467,8 @@
 
   function deleteTask(id) {
     if (!id) return false;
-    const tasks = loadTasks().filter(function (t) { return t.id !== id; });
-    return saveTasks(tasks);
+    taskCache = taskCache.filter(function (t) { return t.id !== id; });
+    return saveTasks(taskCache);
   }
 
   function duplicateTask(id) {
@@ -554,25 +596,14 @@
   }
 
   // HTML Rendering Helpers
-  function actionButtonsHtml(id) {
-    const idAttr = escapeHtml(id);
-    const moreSvg = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>';
-    const viewSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>';
-    const editSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
-    const copySvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16 1H4a2 2 0 0 0-2 2v12h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zM8 21h11a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1z"/></svg>';
-    const timerSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z"/></svg>';
-    const delSvg  = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
-
-    return '<div class="dropdown task-action-menu">' +
-      '<button class="task-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Task actions">' + moreSvg + '</button>' +
-      '<ul class="dropdown-menu dropdown-menu-end shadow-sm">' +
-        '<li><button class="dropdown-item" data-action="view" data-id="' + idAttr + '">' + viewSvg + 'View Details</button></li>' +
-        '<li><button class="dropdown-item" data-action="edit" data-id="' + idAttr + '">' + editSvg + 'Edit Task</button></li>' +
-        '<li><button class="dropdown-item" data-action="timer" data-id="' + idAttr + '">' + timerSvg + 'Focus on Task</button></li>' +
-        '<li><button class="dropdown-item" data-action="copy" data-id="' + idAttr + '">' + copySvg + 'Duplicate</button></li>' +
-        '<li><hr class="dropdown-divider"></li>' +
-        '<li><button class="dropdown-item text-danger" data-action="delete" data-id="' + idAttr + '">' + delSvg + 'Delete</button></li>' +
-      '</ul></div>';
+  // Builds the per-row action dropdown by cloning the #tmpl-action-menu template
+  // and wiring each item's data-id. Returns a DocumentFragment ready to append.
+  function buildActionMenu(id) {
+    const frag = document.getElementById('tmpl-action-menu').content.cloneNode(true);
+    frag.querySelectorAll('[data-action]').forEach(function (btn) {
+      btn.dataset.id = id;
+    });
+    return frag;
   }
 
   function tagChipsHtml(tags) {
@@ -585,82 +616,114 @@
 
   function renderRow(task) {
     const due = getDueDateInfo(task);
-    const isCompleted = task.status === 'Completed';
-    const priorityCls = 'pill ' + (priorityClass[task.priority] || 'pill-low');
-    const statusCls = 'pill ' + (statusClass[task.status] || 'pill-pending');
-    const subtaskHtml = subtaskMiniHtml(task.subtasks);
+    const row = document.getElementById('tmpl-task-row').content.firstElementChild.cloneNode(true);
+    row.classList.toggle('is-completed', task.status === 'Completed');
 
-    return '<div class="task-row' + (isCompleted ? ' is-completed' : '') + '">' +
-      '<div class="col-check"><input type="checkbox" class="form-check-input task-checkbox" data-id="' + escapeHtml(task.id) + '"' + (selectedIds.has(task.id) ? ' checked' : '') + '></div>' +
-      '<div class="col-name">' +
-        '<div class="task-title clickable-title ' + due.cls + '" data-action="view" data-id="' + escapeHtml(task.id) + '">' +
-          escapeHtml(task.name) + (due.label ? '<span class="overdue-badge">' + due.label + '</span>' : '') +
-          (task.blockedBy ? '<span class="badge bg-danger-subtle text-danger ms-2 border border-danger-subtle" style="font-size: 0.65rem;">Blocked</span>' : '') +
-        '</div>' +
-        (task.description ? '<div class="task-sub">' + escapeHtml(task.description) + '</div>' : '') +
-        subtaskHtml +
-      '</div>' +
-      '<div class="col-priority">' +
-        '<span class="priority-cell priority-' + escapeHtml(task.priority.toLowerCase()) + '">' +
-          priorityArrow(task.priority) +
-          '<span class="' + priorityCls + ' clickable-pill" data-action="toggle-priority" data-id="' + escapeHtml(task.id) + '" title="Click to cycle priority">' + escapeHtml(task.priority) + '</span>' +
-        '</span>' +
-      '</div>' +
-      '<div class="col-status">' +
-        '<span class="' + statusCls + ' clickable-pill" data-action="toggle-status" data-id="' + escapeHtml(task.id) + '" title="Click to cycle status">' + escapeHtml(task.status) + '</span>' +
-      '</div>' +
-      '<div class="col-tags tag-cell">' + tagChipsHtml(task.tags) + '</div>' +
-      '<div class="col-date">' + (task.dueDate ? formatDate(task.dueDate) : '—') + '</div>' +
-      '<div class="col-actions">' + actionButtonsHtml(task.id) + '</div>' +
-    '</div>';
+    const checkbox = row.querySelector('.task-checkbox');
+    checkbox.dataset.id = task.id;
+    if (selectedIds.has(task.id)) checkbox.checked = true;
+
+    const title = row.querySelector('.task-title');
+    title.dataset.id = task.id;
+    if (due.cls) title.classList.add(due.cls);
+    row.querySelector('.task-name').textContent = task.name;
+    const overdue = row.querySelector('.overdue-badge');
+    if (due.label) { overdue.textContent = due.label; overdue.classList.remove('d-none'); }
+    const blocked = row.querySelector('.blocked-badge');
+    if (task.blockedBy) blocked.classList.remove('d-none');
+
+    const sub = row.querySelector('.task-sub');
+    if (task.description) { sub.textContent = task.description; sub.classList.remove('d-none'); }
+
+    row.querySelector('.subtask-slot').innerHTML = subtaskMiniHtml(task.subtasks);
+
+    const priorityPill = row.querySelector('[data-action="toggle-priority"]');
+    priorityPill.dataset.id = task.id;
+    priorityPill.className = 'pill ' + (priorityClass[task.priority] || 'pill-low') + ' clickable-pill';
+    priorityPill.textContent = task.priority;
+    row.querySelector('.priority-cell').classList.add('priority-' + task.priority.toLowerCase());
+
+    const statusPill = row.querySelector('[data-action="toggle-status"]');
+    statusPill.dataset.id = task.id;
+    statusPill.className = 'pill ' + (statusClass[task.status] || 'pill-pending') + ' clickable-pill';
+    statusPill.textContent = task.status;
+
+    row.querySelector('.col-tags').innerHTML = tagChipsHtml(task.tags);
+    row.querySelector('.col-date').textContent = task.dueDate ? formatDate(task.dueDate) : '—';
+
+    row.querySelector('.col-actions').appendChild(buildActionMenu(task.id));
+
+    return row;
   }
 
   function renderMobileCard(task) {
     const due = getDueDateInfo(task);
-    const isCompleted = task.status === 'Completed';
-    const priorityCls = 'pill ' + (priorityClass[task.priority] || 'pill-low');
-    const statusCls = 'pill ' + (statusClass[task.status] || 'pill-pending');
-    const subtaskHtml = subtaskMiniHtml(task.subtasks);
+    const card = document.getElementById('tmpl-mobile-card').content.firstElementChild.cloneNode(true);
+    card.classList.toggle('is-completed', task.status === 'Completed');
 
-    return '<div class="mobile-task-card' + (isCompleted ? ' is-completed' : '') + '">' +
-      '<div class="mobile-task-card-header">' +
-        '<input type="checkbox" class="form-check-input task-checkbox me-1" data-id="' + escapeHtml(task.id) + '"' + (selectedIds.has(task.id) ? ' checked' : '') + '">' +
-        '<span class="mobile-task-card-name clickable-title ' + due.cls + '" data-action="view" data-id="' + escapeHtml(task.id) + '">' +
-          escapeHtml(task.name) + (due.label ? '<span class="overdue-badge">' + due.label + '</span>' : '') +
-          (task.blockedBy ? '<span class="badge bg-danger-subtle text-danger ms-1" style="font-size: 0.65rem;">Blocked</span>' : '') +
-        '</span>' +
-      '</div>' +
-      (task.description ? '<div class="mobile-task-card-body"><div class="mobile-task-card-row"><span class="mobile-task-card-label">Description</span><span class="text-truncate">' + escapeHtml(task.description) + '</span></div></div>' : '') +
-      subtaskHtml +
-      '<div class="mobile-task-card-body mt-1">' +
-        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Priority</span><span class="' + priorityCls + ' clickable-pill" data-action="toggle-priority" data-id="' + escapeHtml(task.id) + '">' + escapeHtml(task.priority) + '</span></div>' +
-        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Status</span><span class="' + statusCls + ' clickable-pill" data-action="toggle-status" data-id="' + escapeHtml(task.id) + '">' + escapeHtml(task.status) + '</span></div>' +
-        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Tags</span><span>' + tagChipsHtml(task.tags) + '</span></div>' +
-        '<div class="mobile-task-card-row"><span class="mobile-task-card-label">Assign Date</span><span>' + (task.dueDate ? formatDate(task.dueDate) : '—') + '</span></div>' +
-      '</div>' +
-      '<div class="mobile-task-card-actions">' + actionButtonsHtml(task.id) + '</div>' +
-    '</div>';
+    const checkbox = card.querySelector('.task-checkbox');
+    checkbox.dataset.id = task.id;
+    if (selectedIds.has(task.id)) checkbox.checked = true;
+
+    const name = card.querySelector('.mobile-task-card-name');
+    name.dataset.id = task.id;
+    if (due.cls) name.classList.add(due.cls);
+    card.querySelector('.task-name').textContent = task.name;
+    const overdue = card.querySelector('.overdue-badge');
+    if (due.label) { overdue.textContent = due.label; overdue.classList.remove('d-none'); }
+    const blocked = card.querySelector('.blocked-badge');
+    if (task.blockedBy) blocked.classList.remove('d-none');
+
+    const descBody = card.querySelector('.desc-body');
+    if (task.description) {
+      card.querySelector('.task-desc').textContent = task.description;
+      descBody.classList.remove('d-none');
+    }
+
+    card.querySelector('.subtask-slot').innerHTML = subtaskMiniHtml(task.subtasks);
+
+    const priorityPill = card.querySelector('[data-action="toggle-priority"]');
+    priorityPill.dataset.id = task.id;
+    priorityPill.className = 'pill ' + (priorityClass[task.priority] || 'pill-low') + ' clickable-pill';
+    priorityPill.textContent = task.priority;
+
+    const statusPill = card.querySelector('[data-action="toggle-status"]');
+    statusPill.dataset.id = task.id;
+    statusPill.className = 'pill ' + (statusClass[task.status] || 'pill-pending') + ' clickable-pill';
+    statusPill.textContent = task.status;
+
+    card.querySelector('.tag-cell').innerHTML = tagChipsHtml(task.tags);
+    card.querySelector('.due-date').textContent = task.dueDate ? formatDate(task.dueDate) : '—';
+
+    card.querySelector('.mobile-task-card-actions').appendChild(buildActionMenu(task.id));
+
+    return card;
   }
 
   function renderKanbanCard(task) {
     const due = getDueDateInfo(task);
-    const subtaskHtml = subtaskMiniHtml(task.subtasks);
-    const priorityLower = (task.priority || 'medium').toLowerCase();
+    const card = document.getElementById('tmpl-kanban-card').content.firstElementChild.cloneNode(true);
+    card.classList.add('priority-' + ((task.priority || 'medium').toLowerCase()));
+    card.dataset.id = task.id;
+    card.setAttribute('draggable', 'true');
 
-    return '<div class="kanban-card priority-' + priorityLower + '" draggable="true" data-id="' + escapeHtml(task.id) + '">' +
-      '<div class="d-flex justify-content-between align-items-start gap-2">' +
-        '<span class="kanban-card-title ' + due.cls + '" data-action="view" data-id="' + escapeHtml(task.id) + '">' +
-          escapeHtml(task.name) + (due.label ? '<span class="overdue-badge">' + due.label + '</span>' : '') +
-        '</span>' +
-        actionButtonsHtml(task.id) +
-      '</div>' +
-      (task.description ? '<div class="kanban-card-desc">' + escapeHtml(task.description) + '</div>' : '') +
-      subtaskHtml +
-      '<div class="kanban-card-footer">' +
-        '<div class="tag-cell">' + tagChipsHtml(task.tags) + '</div>' +
-        '<span>' + (task.dueDate ? formatDate(task.dueDate) : '—') + '</span>' +
-      '</div>' +
-    '</div>';
+    const title = card.querySelector('.kanban-card-title');
+    title.dataset.id = task.id;
+    if (due.cls) title.classList.add(due.cls);
+    card.querySelector('.task-name').textContent = task.name;
+    const overdue = card.querySelector('.overdue-badge');
+    if (due.label) { overdue.textContent = due.label; overdue.classList.remove('d-none'); }
+
+    const desc = card.querySelector('.kanban-card-desc');
+    if (task.description) { desc.textContent = task.description; desc.classList.remove('d-none'); }
+
+    card.querySelector('.subtask-slot').innerHTML = subtaskMiniHtml(task.subtasks);
+    card.querySelector('.tag-cell').innerHTML = tagChipsHtml(task.tags);
+    card.querySelector('.due-date').textContent = task.dueDate ? formatDate(task.dueDate) : '—';
+
+    card.querySelector('.col-actions').appendChild(buildActionMenu(task.id));
+
+    return card;
   }
 
   function renderKanban(filteredTasks) {
@@ -672,60 +735,26 @@
     kanbanCountInProgress.textContent = inProgress.length;
     kanbanCountCompleted.textContent = completed.length;
 
-    kanbanCardsPending.innerHTML = pending.length > 0
-      ? pending.map(renderKanbanCard).join('')
-      : '<div class="kanban-empty-col">No pending tasks</div>';
+    kanbanCardsPending.innerHTML = '';
+    if (pending.length > 0) {
+      pending.forEach(function (t) { kanbanCardsPending.appendChild(renderKanbanCard(t)); });
+    } else {
+      kanbanCardsPending.innerHTML = '<div class="kanban-empty-col">No pending tasks</div>';
+    }
 
-    kanbanCardsInProgress.innerHTML = inProgress.length > 0
-      ? inProgress.map(renderKanbanCard).join('')
-      : '<div class="kanban-empty-col">No tasks in progress</div>';
+    kanbanCardsInProgress.innerHTML = '';
+    if (inProgress.length > 0) {
+      inProgress.forEach(function (t) { kanbanCardsInProgress.appendChild(renderKanbanCard(t)); });
+    } else {
+      kanbanCardsInProgress.innerHTML = '<div class="kanban-empty-col">No tasks in progress</div>';
+    }
 
-    kanbanCardsCompleted.innerHTML = completed.length > 0
-      ? completed.map(renderKanbanCard).join('')
-      : '<div class="kanban-empty-col">No completed tasks</div>';
-
-    attachKanbanDragEvents();
-  }
-
-  function attachKanbanDragEvents() {
-    const cards = document.querySelectorAll('.kanban-card');
-    cards.forEach(function (card) {
-      card.addEventListener('dragstart', function (e) {
-        e.dataTransfer.setData('text/plain', this.dataset.id);
-        e.dataTransfer.effectAllowed = 'move';
-        this.classList.add('dragging');
-      });
-      card.addEventListener('dragend', function () {
-        this.classList.remove('dragging');
-      });
-    });
-
-    const dropzones = [kanbanCardsPending, kanbanCardsInProgress, kanbanCardsCompleted];
-    dropzones.forEach(function (zone) {
-      if (!zone) return;
-      zone.addEventListener('dragover', function (e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        this.classList.add('drag-over');
-      });
-      zone.addEventListener('dragleave', function () {
-        this.classList.remove('drag-over');
-      });
-      zone.addEventListener('drop', function (e) {
-        e.preventDefault();
-        this.classList.remove('drag-over');
-        const taskId = e.dataTransfer.getData('text/plain');
-        const targetStatus = this.dataset.status;
-        if (!taskId || !targetStatus) return;
-
-        const task = loadTasks().find(function (t) { return t.id === taskId; });
-        if (task && task.status !== targetStatus) {
-          updateTask(taskId, { status: targetStatus });
-          showToast('Moved "' + task.name + '" to ' + targetStatus, 'success');
-          refresh();
-        }
-      });
-    });
+    kanbanCardsCompleted.innerHTML = '';
+    if (completed.length > 0) {
+      completed.forEach(function (t) { kanbanCardsCompleted.appendChild(renderKanbanCard(t)); });
+    } else {
+      kanbanCardsCompleted.innerHTML = '<div class="kanban-empty-col">No completed tasks</div>';
+    }
   }
 
   function renderAnalytics(allTasks) {
@@ -736,9 +765,6 @@
     let high = 0;
     let medium = 0;
     let low = 0;
-    let totalSubtasks = 0;
-    let completedSubtasks = 0;
-    let totalMinutes = 0;
     const tagCountMap = {};
 
     for (let i = 0; i < total; i++) {
@@ -751,30 +777,17 @@
       else if (t.priority === 'Medium') medium++;
       else low++;
 
-      (t.subtasks || []).forEach(function (st) {
-        totalSubtasks++;
-        if (st.completed) completedSubtasks++;
-      });
-
-      totalMinutes += (parseInt(t.timeSpent, 10) || 0);
-
       (t.tags || []).forEach(function (tag) {
         tagCountMap[tag] = (tagCountMap[tag] || 0) + 1;
       });
     }
 
     const velocityPct = total > 0 ? Math.round((completed / total) * 100) : 0;
-    const subtaskPct = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
-    const hoursLogged = Math.floor(totalMinutes / 60);
-    const minsLogged = totalMinutes % 60;
 
     analyticsVelocityVal.textContent = velocityPct + '%';
     analyticsVelocitySub.textContent = completed + ' of ' + total + ' tasks completed';
     analyticsHighPriorityVal.textContent = high;
     analyticsHighPrioritySub.textContent = high + ' active urgent tasks';
-    analyticsSubtasksVal.textContent = subtaskPct + '%';
-    analyticsSubtasksSub.textContent = completedSubtasks + ' of ' + totalSubtasks + ' checklist items done';
-    analyticsTimeVal.textContent = hoursLogged + 'h ' + minsLogged + 'm';
 
     // Priority breakdown bars
     const highPct = total > 0 ? Math.round((high / total) * 100) : 0;
@@ -990,12 +1003,12 @@
         let page = getPage(filteredTasks);
         taskList.innerHTML = '';
         for (let i = 0; i < page.length; i++) {
-          taskList.insertAdjacentHTML('beforeend', renderRow(page[i]));
+          taskList.appendChild(renderRow(page[i]));
         }
 
         mobileTaskList.innerHTML = '';
         for (let i = 0; i < page.length; i++) {
-          mobileTaskList.insertAdjacentHTML('beforeend', renderMobileCard(page[i]));
+          mobileTaskList.appendChild(renderMobileCard(page[i]));
         }
 
         let start = (currentPage - 1) * pageSize + 1;
@@ -1401,17 +1414,6 @@
     });
   }
 
-  if (detailFocusTimerBtn) {
-    detailFocusTimerBtn.addEventListener('click', function () {
-      if (!detailTaskId) return;
-      const task = loadTasks().find(function (t) { return t.id === detailTaskId; });
-      if (task) {
-        startFocusTimerForTask(task.id);
-        taskDetailModal.hide();
-      }
-    });
-  }
-
   if (detailEditBtn) {
     detailEditBtn.addEventListener('click', function () {
       if (!detailTaskId) return;
@@ -1447,9 +1449,6 @@
     if (action === 'edit') {
       const task = loadTasks().find(function (t) { return t.id === id; });
       if (task) openForm(task);
-    }
-    if (action === 'timer') {
-      startFocusTimerForTask(id);
     }
     if (action === 'toggle-status') {
       const task = loadTasks().find(function (t) { return t.id === id; });
@@ -1500,6 +1499,62 @@
   mobileTaskList.addEventListener('click', handleTaskAction);
   kanbanBoard.addEventListener('click', handleTaskAction);
 
+  // Drag & drop wiring for the Kanban board (event delegation so it
+  // survives the innerHTML re-renders done by renderKanban).
+  let draggedKanbanId = null;
+
+  kanbanBoard.addEventListener('dragstart', function (e) {
+    if (e.target.closest('.task-action-menu')) { e.preventDefault(); return; }
+    const card = e.target.closest('.kanban-card');
+    if (!card) return;
+    draggedKanbanId = card.dataset.id;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', draggedKanbanId);
+    card.classList.add('dragging');
+  });
+
+  kanbanBoard.addEventListener('dragend', function () {
+    const card = kanbanBoard.querySelector('.kanban-card.dragging');
+    if (card) card.classList.remove('dragging');
+    kanbanBoard.querySelectorAll('.kanban-cards-dropzone.drag-over')
+      .forEach(function (dz) { dz.classList.remove('drag-over'); });
+    draggedKanbanId = null;
+  });
+
+  kanbanBoard.addEventListener('dragover', function (e) {
+    const dz = e.target.closest('.kanban-cards-dropzone');
+    if (!dz) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (!dz.classList.contains('drag-over')) {
+      kanbanBoard.querySelectorAll('.kanban-cards-dropzone.drag-over')
+        .forEach(function (d) { d.classList.remove('drag-over'); });
+      dz.classList.add('drag-over');
+    }
+  });
+
+  kanbanBoard.addEventListener('dragleave', function (e) {
+    const dz = e.target.closest('.kanban-cards-dropzone');
+    if (!dz) return;
+    // Only clear when the pointer actually leaves the dropzone (not a child).
+    if (!dz.contains(e.relatedTarget)) dz.classList.remove('drag-over');
+  });
+
+  kanbanBoard.addEventListener('drop', function (e) {
+    const dz = e.target.closest('.kanban-cards-dropzone');
+    if (!dz) return;
+    e.preventDefault();
+    const id = e.dataTransfer.getData('text/plain') || draggedKanbanId;
+    if (!id) return;
+    const newStatus = dz.dataset.status;
+    const task = loadTasks().find(function (t) { return t.id === id; });
+    dz.classList.remove('drag-over');
+    if (!task || task.status === newStatus) return;
+    updateTask(id, { status: newStatus });
+    showToast('Moved "' + task.name + '" to ' + newStatus, 'success');
+    refresh();
+  });
+
   // Quick Add button on Kanban column headers
   document.addEventListener('click', function (e) {
     const btn = e.target.closest('.kanban-add-btn');
@@ -1507,87 +1562,6 @@
     const defaultStatus = btn.dataset.addStatus || 'Pending';
     openForm(null, defaultStatus);
   });
-
-  // Focus / Pomodoro Timer Engine
-  function updateTimerDisplay() {
-    const m = Math.floor(timerRemaining / 60);
-    const s = timerRemaining % 60;
-    timerDisplay.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-  }
-
-  function startFocusTimerForTask(taskId) {
-    timerActiveTaskId = taskId;
-    timerRemaining = timerDuration;
-    timerIsRunning = true;
-    focusTimerWidget.classList.add('is-running');
-    timerToggleIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-    updateTimerDisplay();
-
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(tickTimer, 1000);
-
-    const task = loadTasks().find(function (t) { return t.id === taskId; });
-    showToast('Focus timer started for "' + (task ? task.name : 'Task') + '" (25m)', 'info');
-  }
-
-  function tickTimer() {
-    if (timerRemaining > 0) {
-      timerRemaining--;
-      updateTimerDisplay();
-    } else {
-      clearInterval(timerInterval);
-      timerInterval = null;
-      timerIsRunning = false;
-      focusTimerWidget.classList.remove('is-running');
-      timerToggleIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-
-      playTimerAlertSound();
-      showToast('🎉 Focus session completed! Great job.', 'success');
-
-      if (timerActiveTaskId) {
-        const tasks = loadTasks();
-        const t = tasks.find(function (task) { return task.id === timerActiveTaskId; });
-        if (t) {
-          t.timeSpent = (parseInt(t.timeSpent, 10) || 0) + 25;
-          if (!Array.isArray(t.history)) t.history = [];
-          t.history.unshift({ action: 'Logged 25 mins focus session', timestamp: new Date().toISOString() });
-          saveTasks(tasks);
-          refresh();
-        }
-      }
-    }
-  }
-
-  function toggleTimer() {
-    if (timerIsRunning) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-      timerIsRunning = false;
-      focusTimerWidget.classList.remove('is-running');
-      timerToggleIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-      showToast('Timer paused', 'info');
-    } else {
-      if (timerRemaining <= 0) timerRemaining = timerDuration;
-      timerIsRunning = true;
-      focusTimerWidget.classList.add('is-running');
-      timerToggleIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-      if (timerInterval) clearInterval(timerInterval);
-      timerInterval = setInterval(tickTimer, 1000);
-    }
-  }
-
-  function resetTimer() {
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = null;
-    timerIsRunning = false;
-    timerRemaining = timerDuration;
-    focusTimerWidget.classList.remove('is-running');
-    timerToggleIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-    updateTimerDisplay();
-  }
-
-  if (timerToggleBtn) timerToggleBtn.addEventListener('click', toggleTimer);
-  if (timerResetBtn) timerResetBtn.addEventListener('click', resetTimer);
 
   // Daily Standup Generator
   function generateStandupReport() {
@@ -1667,7 +1641,6 @@
     items.push({ category: 'Actions', title: 'Add New Task', icon: '➕', kbd: 'N', action: function () { openForm(); } });
     items.push({ category: 'Actions', title: 'Generate Daily Standup Summary', icon: '📝', kbd: 'S', action: generateStandupReport });
     items.push({ category: 'Actions', title: 'Toggle Dark / Light Theme', icon: '🌓', kbd: 'T', action: toggleTheme });
-    items.push({ category: 'Actions', title: 'Start / Pause Focus Timer', icon: '⏱️', action: toggleTimer });
     items.push({ category: 'Actions', title: 'Export Backup as JSON', icon: '💾', action: exportToJson });
     items.push({ category: 'Actions', title: 'Export Spreadsheet as Excel (.xlsx)', icon: '📗', action: exportToExcel });
     items.push({ category: 'Actions', title: 'Export Sprint Checklist as Markdown (.md)', icon: '📄', action: exportToMarkdown });
@@ -2027,8 +2000,8 @@
     if (selectedIds.size === 0) return;
     const count = selectedIds.size;
     confirmThen('Delete ' + count + ' Task' + (count > 1 ? 's' : ''), 'Are you sure you want to delete ' + count + ' selected task' + (count > 1 ? 's' : '') + '?', function () {
-      const tasks = loadTasks().filter(function (t) { return !selectedIds.has(t.id); });
-      saveTasks(tasks);
+      taskCache = loadTasks().filter(function (t) { return !selectedIds.has(t.id); });
+      saveTasks(taskCache);
       selectedIds.clear();
       confirmModal.hide();
       showUndoDeleteToast('Deleted ' + count + ' tasks');
@@ -2246,7 +2219,8 @@
           return;
         }
 
-        saveTasks(existing.concat(toAdd));
+        taskCache = existing.concat(toAdd);
+        saveTasks(taskCache);
 
         let msg = 'Imported ' + imported + ' task' + (imported > 1 ? 's' : '');
         if (totalSkipped > 0) {
@@ -2504,6 +2478,35 @@
     cmdPaletteInput.focus();
   });
 
+  // ---------------------------------------------------------------------------
+  // Module Namespaces (references to the function declarations above).
+  // Grouped for readability; runtime behavior is unchanged.
+  // ---------------------------------------------------------------------------
+  const Utilities = {
+    escapeHtml: escapeHtml, slugify: slugify, localDateStr: localDateStr,
+    formatDate: formatDate, formatDateTime: formatDateTime, priorityWeight: priorityWeight,
+    getDueDateInfo: getDueDateInfo, parseMarkdown: parseMarkdown,
+    isValidTask: isValidTask, generateID: generateID
+  };
+  const StorageUtils = { readRaw: readRaw, writeRaw: writeRaw, loadTasks: loadTasks, saveTasks: saveTasks };
+  const TaskState = {
+    all: loadTasks,
+    add: addTask,
+    update: updateTask,
+    remove: deleteTask,
+    duplicate: duplicateTask,
+    replaceAll: function (tasks) { taskCache = tasks; return saveTasks(taskCache); }
+  };
+  const DOMRenderer = {
+    renderRow: renderRow, renderMobileCard: renderMobileCard, renderKanbanCard: renderKanbanCard,
+    renderKanban: renderKanban, renderAnalytics: renderAnalytics, render: render,
+    buildActionMenu: buildActionMenu, tagChipsHtml: tagChipsHtml, subtaskMiniHtml: subtaskMiniHtml
+  };
+  const EventHandlers = {
+    handleTaskAction: handleTaskAction,
+    confirmThen: confirmThen, renderCommandPaletteResults: renderCommandPaletteResults
+  };
+
   // Init Theme
   try {
     const saved = localStorage.getItem(THEME_KEY);
@@ -2511,6 +2514,6 @@
   } catch (e) {}
 
   // Initialize App
-  updateTimerDisplay();
+  taskCache = readRaw();   // load tasks from localStorage once into the in-memory cache
   refresh();
 })();
