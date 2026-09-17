@@ -1248,6 +1248,7 @@
 
   function resetForm() {
     form.reset();
+    fieldDueDate.value = localDateStr(new Date());
     form.classList.remove('was-validated');
     fieldName.classList.remove('is-invalid');
     editId = null;
