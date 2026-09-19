@@ -827,6 +827,19 @@
             </table>
           </div>
           <p class="text-muted small mb-0">Column names are case-insensitive. Extra columns are ignored. Rows without a task name are skipped.</p>
+          <hr class="my-3">
+          <p class="small mb-2"><strong>Daily Tasks (Sheet 2)</strong> — optional sheet named <code>Daily Tasks</code>:</p>
+          <table class="table table-sm table-bordered mb-0">
+            <thead class="table-light">
+              <tr><th>Column Name</th><th>Required</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Habit Name</strong></td><td><span class="text-danger">Yes</span></td><td class="text-muted">Daily habit title</td></tr>
+              <tr><td>Icon</td><td>No</td><td class="text-muted">Habitat icon/emoji</td></tr>
+              <tr><td>Date columns</td><td>No</td><td class="text-muted">One per date: <code>YYYY-MM-DD</code>, value <code>completed</code> or <code>not-completed</code></td></tr>
+            </tbody>
+          </table>
+          <p class="text-muted small mt-2 mb-0">Rows without a habit name are skipped. Habits whose name already exists are skipped.</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>

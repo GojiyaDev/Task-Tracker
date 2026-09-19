@@ -2241,9 +2241,10 @@
       showToast('Excel library failed to load. Please refresh.', 'danger');
       return;
     }
+    dtLoadData();
     const tasks = loadTasks();
-    if (tasks.length === 0) {
-      showToast('No tasks to export.', 'warning');
+    if (tasks.length === 0 && dtData.dailyTasks.length === 0) {
+      showToast('Nothing to export.', 'warning');
       return;
     }
     const today = localDateStr(new Date());
@@ -2258,7 +2259,7 @@
 
     requestAnimationFrame(function () {
       const data = [
-        ['Sr No', 'Task Name', 'Description', 'Priority', 'Status', 'Assign Date', 'Tags', 'Time Spent (Mins)', 'Subtasks Count']
+        ['Sr No', 'Task Name', 'Description', 'Priority', 'Status', 'Assign Date', 'Tags']
       ];
       for (let i = 0; i < tasks.length; i++) {
         const t = tasks[i];
@@ -2269,15 +2270,31 @@
           t.priority || '',
           t.status || '',
           t.dueDate || '',
-          safeStr((t.tags || []).join(', ')),
-          t.timeSpent || 0,
-          (t.subtasks || []).length
+          safeStr((t.tags || []).join(', '))
         ]);
       }
 
       const ws = XLSX.utils.aoa_to_sheet(data);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Tasks');
+
+      const dtDateSet = {};
+      dtData.dailyTasks.forEach(function (t) {
+        const entries = dtData.dailyTaskEntries[t.id] || {};
+        Object.keys(entries).forEach(function (d) { if (entries[d] !== '') dtDateSet[d] = true; });
+      });
+      const dtDates = Object.keys(dtDateSet).sort();
+      const dtRows = [['Habit Name', 'Icon'].concat(dtDates)];
+      dtData.dailyTasks.forEach(function (t) {
+        const entries = dtData.dailyTaskEntries[t.id] || {};
+        const row = [safeStr(t.name), t.icon || ''];
+        dtDates.forEach(function (d) { row.push(entries[d] || ''); });
+        dtRows.push(row);
+      });
+      if (dtRows.length > 1) {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dtRows), 'Daily Tasks');
+      }
+
       const wbOut = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
       const blob = new Blob([wbOut], { type: 'application/octet-stream' });
@@ -2291,7 +2308,16 @@
       URL.revokeObjectURL(url);
 
       loadingOverlay.classList.add('d-none');
-      showToast('Exported ' + tasks.length + ' tasks to Excel!', 'success');
+
+      const habitCount = dtRows.length > 1 ? dtRows.length - 1 : 0;
+      let exportMsg;
+      if (tasks.length === 0) {
+        exportMsg = 'Exported ' + habitCount + ' daily habit' + (habitCount === 1 ? '' : 's') + ' to Excel!';
+      } else {
+        exportMsg = 'Exported ' + tasks.length + ' task' + (tasks.length === 1 ? '' : 's') + ' to Excel!';
+        if (habitCount > 0) exportMsg += ' (' + habitCount + ' daily habit' + (habitCount === 1 ? '' : 's') + ')';
+      }
+      showToast(exportMsg, 'success');
     });
   }
 
@@ -2311,10 +2337,25 @@
       try {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
+
+        let dtImported = 0;
+        let dtSkipped = 0;
+        const dailySheetName = workbook.SheetNames.find(function (n) {
+          return n.trim().toLowerCase() === 'daily tasks';
+        });
+        if (dailySheetName) {
+          const dtRows = XLSX.utils.sheet_to_json(workbook.Sheets[dailySheetName], { defval: '' });
+          if (dtRows.length > 0) {
+            const res = dtImportFromExcelRows(dtRows);
+            dtImported = res.imported;
+            dtSkipped = res.skipped;
+          }
+        }
+
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
-        if (rows.length === 0) {
+        if (rows.length === 0 && dtImported === 0) {
           showToast('Excel file is empty.', 'warning');
           return;
         }
@@ -2402,27 +2443,38 @@
 
         const totalSkipped = skippedFileDup + skippedExistDup;
 
-        if (imported === 0 && totalSkipped === 0) {
+        if (imported === 0 && totalSkipped === 0 && dtImported === 0) {
           showToast('No valid tasks found in the file.', 'warning');
           return;
         }
 
-        if (imported === 0 && totalSkipped > 0) {
+        if (imported === 0 && totalSkipped > 0 && dtImported === 0) {
           showToast('No new tasks — all rows are duplicates.', 'warning');
           return;
         }
 
-        taskCache = existing.concat(toAdd);
-        saveTasks(taskCache);
-
-        let msg = 'Imported ' + imported + ' task' + (imported > 1 ? 's' : '');
-        if (totalSkipped > 0) {
-          const parts = [];
-          if (skippedFileDup > 0) parts.push(skippedFileDup + ' file duplicate' + (skippedFileDup > 1 ? 's' : ''));
-          if (skippedExistDup > 0) parts.push(skippedExistDup + ' already exist' + (skippedExistDup > 1 ? 's' : ''));
-          msg += '. Skipped ' + totalSkipped + ' (' + parts.join(', ') + ')';
+        if (imported > 0) {
+          taskCache = existing.concat(toAdd);
+          saveTasks(taskCache);
         }
-        showToast(msg, 'success');
+
+        const msgs = [];
+        if (imported > 0) {
+          let m = 'Imported ' + imported + ' task' + (imported > 1 ? 's' : '');
+          if (totalSkipped > 0) {
+            const parts = [];
+            if (skippedFileDup > 0) parts.push(skippedFileDup + ' file duplicate' + (skippedFileDup > 1 ? 's' : ''));
+            if (skippedExistDup > 0) parts.push(skippedExistDup + ' already exist' + (skippedExistDup > 1 ? 's' : ''));
+            m += '. Skipped ' + totalSkipped + ' (' + parts.join(', ') + ')';
+          }
+          msgs.push(m + '.');
+        }
+        if (dtImported > 0) {
+          let m = 'Imported ' + dtImported + ' daily task' + (dtImported > 1 ? 's' : '');
+          if (dtSkipped > 0) m += '. Skipped ' + dtSkipped + ' (duplicates)';
+          msgs.push(m + '.');
+        }
+        showToast(msgs.join(' '), 'success');
         refresh();
       } catch (err) {
         showToast('Failed to read Excel file. Check format.', 'danger');
@@ -2663,6 +2715,61 @@
       showToast('Failed to save daily tasks data.', 'danger');
       return false;
     }
+  }
+
+  function dtImportFromExcelRows(rows) {
+    dtLoadData();
+    if (!dtData.dailyTaskEntries || typeof dtData.dailyTaskEntries !== 'object') dtData.dailyTaskEntries = {};
+
+    let imported = 0;
+    let skipped = 0;
+
+    const keys = Object.keys(rows[0]).reduce(function (acc, k) {
+      acc[k.trim().toLowerCase()] = k;
+      return acc;
+    }, {});
+
+    const dateKeys = Object.keys(rows[0]).filter(function (k) {
+      return /^\d{4}-\d{2}-\d{2}$/.test(k.trim());
+    });
+
+    const nameKey = keys['habit name'] || keys['habitname'] || keys['name'];
+    if (!nameKey) {
+      showToast('Daily Tasks sheet needs a "Habit Name" column.', 'warning');
+      return { imported: 0, skipped: 0 };
+    }
+    const iconKey = keys['icon'] || '';
+
+    const seen = {};
+    dtData.dailyTasks.forEach(function (t) { seen[t.name.trim().toLowerCase()] = true; });
+
+    rows.forEach(function (row) {
+      const name = String(row[nameKey] || '').trim();
+      if (!name) return;
+      const key = name.toLowerCase();
+      if (seen[key]) { skipped++; return; }
+      seen[key] = true;
+
+      const id = generateID();
+      const entries = {};
+      dateKeys.forEach(function (dk) {
+        const v = String(row[dk] || '').trim();
+        if (v === 'completed' || v === 'not-completed') entries[dk] = v;
+      });
+
+      dtData.dailyTasks.push({
+        id: id,
+        name: name,
+        icon: iconKey ? String(row[iconKey] || '').trim() : '',
+        createdAt: localDateStr(new Date()),
+        order: dtData.dailyTasks.length
+      });
+      if (Object.keys(entries).length > 0) dtData.dailyTaskEntries[id] = entries;
+      imported++;
+    });
+
+    if (imported > 0) dtSaveData();
+    return { imported: imported, skipped: skipped };
   }
 
   function dtSetToToday() {

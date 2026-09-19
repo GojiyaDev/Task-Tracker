@@ -38,7 +38,7 @@ The application runs 100% locally in the browser with **localStorage** persisten
 
 ### 💾 Data Safety & Portability
 - **JSON Backup & Restore**: Export full database backups and restore them anytime with automatic duplicate deduplication.
-- **Excel (.xlsx) Import & Export**: Fast spreadsheet data exchange powered by SheetJS with formula injection sanitization.
+- **Excel (.xlsx) Import & Export**: Fast spreadsheet data exchange powered by SheetJS with formula injection sanitization. Exports two sheets: `Tasks` and `Daily Tasks`.
 - **CSV & Markdown Export**: Download standard CSV files or GitHub-flavored Markdown checklist sprint summaries.
 - **Undo Delete**: 5-second undo toast recovery for accidental deletions.
 
@@ -85,6 +85,13 @@ When importing tasks from Excel (`.xlsx` or `.xls`), use the following column he
 | `Status` | Optional | `Pending`, `In Progress`, or `Completed` (default: `Pending`) |
 | `Assign Date` / `Due Date` | Optional | Format: `YYYY-MM-DD` |
 | `Tags` | Optional | Comma or semicolon separated (e.g. `frontend, bug, api`) |
+
+Exported Excel files contain two sheets:
+
+1. `Tasks` — the task list above.
+2. `Daily Tasks` — habits from the Daily Tasks view. Header uses `Habit Name`, `Icon`, followed by one column per recorded date (`YYYY-MM-DD`). Cells contain `completed`, `not-completed`, or are empty.
+
+On import Sheet 2 is optional and read back the same way. Rows missing a `Habit Name` are skipped; habits whose name already exists are skipped.
 
 ---
 
