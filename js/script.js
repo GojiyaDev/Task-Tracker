@@ -2683,7 +2683,7 @@
   // State
   let dtData = { dailyTasks: [], dailyTaskEntries: {} };
   let dtCurrentStartDate = null; // ISO date of the first visible day
-  let dtViewDays = 7;            // 7, 14, or 30
+  let dtViewDays = 7;            // 7 or 14
   let dtSelectedCell = null;     // { taskId, date }
   let dtModalTaskId = null;
 

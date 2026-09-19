@@ -1410,16 +1410,19 @@ h1, h2, h3, h4, h5, h6 { font-weight: 600; letter-spacing: -0.01em; color: var(-
   display: flex;
   align-items: center;
   gap: 6px;
-  min-width: 190px;
+  min-width: 0;
   padding: 4px 10px;
 }
 .dt-task-icon { font-size: 1rem; line-height: 1; }
 .dt-task-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 380px;
   font-weight: 600;
   color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 150px;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .dt-streak-badge {
   font-family: var(--font-mono);
