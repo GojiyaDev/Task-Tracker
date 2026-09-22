@@ -84,6 +84,7 @@ When importing tasks from Excel (`.xlsx` or `.xls`), use the following column he
 | `Priority` | Optional | `Low`, `Medium`, or `High` (default: `Medium`) |
 | `Status` | Optional | `Pending`, `In Progress`, or `Completed` (default: `Pending`) |
 | `Assign Date` / `Due Date` | Optional | Format: `YYYY-MM-DD` |
+| `Completion Date` | Optional | Format: `YYYY-MM-DD`; auto-set to today when a task is marked Completed, cleared when reopened |
 | `Tags` | Optional | Comma or semicolon separated (e.g. `frontend, bug, api`) |
 
 Exported Excel files contain two sheets:

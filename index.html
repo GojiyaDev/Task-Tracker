@@ -332,6 +332,7 @@
               <div class="col-status sortable-header" data-sort="status">Status <span class="sort-indicator"></span></div>
               <div class="col-tags">Tags</div>
               <div class="col-date sortable-header" data-sort="dueDate">Assign Date <span class="sort-indicator"></span></div>
+              <div class="col-completion-date">Completion Date</div>
               <div class="col-actions"><span class="visually-hidden">Actions</span></div>
             </div>
             <div id="taskList"></div>
@@ -628,11 +629,15 @@
           </div>
 
           <div class="row mb-3">
-            <div class="col-sm-6 detail-section mb-3 mb-sm-0">
+            <div class="col-sm-4 detail-section mb-3 mb-sm-0">
               <h6 class="text-muted small text-uppercase fw-bold mb-1">Assign Date</h6>
               <div id="detailDueDate" class="fw-semibold small">—</div>
             </div>
-            <div class="col-sm-6 detail-section">
+            <div class="col-sm-4 detail-section mb-3 mb-sm-0">
+              <h6 class="text-muted small text-uppercase fw-bold mb-1">Completion Date</h6>
+              <div id="detailCompletionDate" class="fw-semibold small">—</div>
+            </div>
+            <div class="col-sm-4 detail-section">
               <h6 class="text-muted small text-uppercase fw-bold mb-1">Tags</h6>
               <div id="detailTags" class="tag-cell"></div>
             </div>
@@ -821,6 +826,7 @@
                 <tr><td>Priority</td><td>No</td><td class="text-muted">Low, Medium, or High</td></tr>
                 <tr><td>Status</td><td>No</td><td class="text-muted">Pending, In Progress, or Completed</td></tr>
                 <tr><td>Assign Date</td><td>No</td><td class="text-muted">YYYY-MM-DD format</td></tr>
+                <tr><td>Completion Date</td><td>No</td><td class="text-muted">YYYY-MM-DD format; auto-set to today for Completed rows left blank</td></tr>
                 <tr><td>Tags</td><td>No</td><td class="text-muted">Comma-separated list</td></tr>
               </tbody>
             </table>
@@ -900,6 +906,7 @@
         </div>
         <div class="col-tags tag-cell"></div>
         <div class="col-date"></div>
+        <div class="col-completion-date"></div>
         <div class="col-actions"></div>
       </div>
     </template>
@@ -923,6 +930,7 @@
           <div class="mobile-task-card-row"><span class="mobile-task-card-label">Status</span><span class="pill clickable-pill" data-action="toggle-status"></span></div>
           <div class="mobile-task-card-row"><span class="mobile-task-card-label">Tags</span><span class="tag-cell"></span></div>
           <div class="mobile-task-card-row"><span class="mobile-task-card-label">Assign Date</span><span class="due-date"></span></div>
+          <div class="mobile-task-card-row"><span class="mobile-task-card-label">Completion Date</span><span class="completion-date"></span></div>
         </div>
         <div class="mobile-task-card-actions col-actions"></div>
       </div>

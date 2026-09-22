@@ -115,6 +115,7 @@
   const detailSubtasksProgressBar = document.getElementById('detailSubtasksProgressBar');
   const detailSubtasksList = document.getElementById('detailSubtasksList');
   const detailDueDate      = document.getElementById('detailDueDate');
+  const detailCompletionDate = document.getElementById('detailCompletionDate');
   const detailTimeSpent    = document.getElementById('detailTimeSpent');
   const detailCreatedAt    = document.getElementById('detailCreatedAt');
   const detailBlockedBy    = document.getElementById('detailBlockedBy');
@@ -222,6 +223,23 @@
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return y + '-' + m + '-' + day;
+  }
+
+  // Normalizes an Excel-imported date value to 'YYYY-MM-DD'.
+  // Handles JS Date objects (XLSX cellDates), Excel serial numbers, and
+  // text dates; returns '' for anything unreadable.
+  function normalizeDateVal(v) {
+    if (v instanceof Date && !isNaN(v.getTime())) return localDateStr(v);
+    if (typeof v === 'number' && isFinite(v)) {
+      const p = (typeof XLSX !== 'undefined' && XLSX.SSF && XLSX.SSF.parse_date_code)
+        ? XLSX.SSF.parse_date_code(v) : null;
+      if (p) {
+        return p.y + '-' + String(p.m).padStart(2, '0') + '-' + String(p.d).padStart(2, '0');
+      }
+      return '';
+    }
+    const s = typeof v === 'string' ? v.trim() : '';
+    return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
   }
 
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -464,6 +482,7 @@
       priority: data.priority || 'Medium',
       status: data.status || 'Pending',
       dueDate: data.dueDate || '',
+      completionDate: (data.status || 'Pending') === 'Completed' ? localDateStr(new Date()) : '',
       blockedBy: data.blockedBy || '',
       timeSpent: parseInt(data.timeSpent, 10) || 0,
       subtasks: Array.isArray(data.subtasks) ? data.subtasks : [],
@@ -492,10 +511,18 @@
       history.unshift({ action: 'Priority changed to ' + data.priority, timestamp: now });
     }
 
+    // Completion Date: stamp when entering Completed, keep original stamp if
+    // already Completed, clear when leaving Completed.
+    let completionDate = existing.completionDate || '';
+    if (data.status && data.status !== existing.status) {
+      completionDate = data.status === 'Completed' ? localDateStr(new Date()) : '';
+    }
+
     tasks[idx] = {
       ...existing,
       ...data,
       id: id,
+      completionDate: completionDate,
       updatedAt: now,
       history: history.slice(0, 20) // keep last 20 entries
     };
@@ -687,6 +714,7 @@
 
     row.querySelector('.col-tags').innerHTML = tagChipsHtml(task.tags);
     row.querySelector('.col-date').textContent = task.dueDate ? formatDate(task.dueDate) : '—';
+    row.querySelector('.col-completion-date').textContent = task.completionDate ? formatDate(task.completionDate) : '—';
 
     row.querySelector('.col-actions').appendChild(buildActionMenu(task.id));
 
@@ -731,6 +759,7 @@
 
     card.querySelector('.tag-cell').innerHTML = tagChipsHtml(task.tags);
     card.querySelector('.due-date').textContent = task.dueDate ? formatDate(task.dueDate) : '—';
+    card.querySelector('.completion-date').textContent = task.completionDate ? formatDate(task.completionDate) : '—';
 
     card.querySelector('.mobile-task-card-actions').appendChild(buildActionMenu(task.id));
 
@@ -1413,6 +1442,7 @@
 
     detailDescription.innerHTML = parseMarkdown(task.description);
     detailDueDate.textContent = task.dueDate ? formatDate(task.dueDate) : '—';
+    detailCompletionDate.textContent = task.completionDate ? formatDate(task.completionDate) : '—';
     const hours = Math.floor((task.timeSpent || 0) / 60);
     const mins = (task.timeSpent || 0) % 60;
     detailTimeSpent.textContent = (hours > 0 ? hours + 'h ' : '') + mins + 'm';
@@ -2206,9 +2236,11 @@
   bulkCompleteBtn.addEventListener('click', function () {
     if (selectedIds.size === 0) return;
     const tasks = loadTasks();
+    const today = localDateStr(new Date());
     for (let i = 0; i < tasks.length; i++) {
-      if (selectedIds.has(tasks[i].id)) {
+      if (selectedIds.has(tasks[i].id) && tasks[i].status !== 'Completed') {
         tasks[i].status = 'Completed';
+        tasks[i].completionDate = today;
       }
     }
     saveTasks(tasks);
@@ -2224,10 +2256,11 @@
       const tasks = loadTasks();
       for (let i = 0; i < tasks.length; i++) {
         if (selectedIds.has(tasks[i].id)) {
-          tasks[i].status = 'In Progress';
-        }
+        tasks[i].status = 'In Progress';
+        tasks[i].completionDate = '';
       }
-      saveTasks(tasks);
+    }
+    saveTasks(tasks);
       const count = selectedIds.size;
       selectedIds.clear();
       showToast('Marked ' + count + ' task' + (count > 1 ? 's' : '') + ' as In Progress.', 'info');
@@ -2259,7 +2292,7 @@
 
     requestAnimationFrame(function () {
       const data = [
-        ['Sr No', 'Task Name', 'Description', 'Priority', 'Status', 'Assign Date', 'Tags']
+        ['Sr No', 'Task Name', 'Description', 'Priority', 'Status', 'Assign Date', 'Completion Date', 'Tags']
       ];
       for (let i = 0; i < tasks.length; i++) {
         const t = tasks[i];
@@ -2270,6 +2303,7 @@
           t.priority || '',
           t.status || '',
           t.dueDate || '',
+          t.completionDate || '',
           safeStr((t.tags || []).join(', '))
         ]);
       }
@@ -2336,7 +2370,7 @@
     reader.onload = function (e) {
       try {
         const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
 
         let dtImported = 0;
         let dtSkipped = 0;
@@ -2375,6 +2409,8 @@
           'duedate': 'dueDate',
           'assign date': 'dueDate',
           'assigndate': 'dueDate',
+          'completion date': 'completionDate',
+          'completiondate': 'completionDate',
           'tags': 'tags',
           'tag': 'tags'
         };
@@ -2396,18 +2432,21 @@
           let priority = 'Medium';
           let status = 'Pending';
           let dueDate = '';
+          let completionDate = '';
           let tags = '';
 
           for (const colKey in colMap) {
             const srcKey = keys[colKey];
             if (!srcKey) continue;
-            const val = String(row[srcKey] || '').trim();
+            const raw = row[srcKey];
             const field = colMap[colKey];
+            if (field === 'dueDate') { dueDate = normalizeDateVal(raw); continue; }
+            if (field === 'completionDate') { completionDate = normalizeDateVal(raw); continue; }
+            const val = String(raw || '').trim();
             if (field === 'name') name = val;
             else if (field === 'description') description = val;
             else if (field === 'priority') priority = val;
             else if (field === 'status') status = val;
-            else if (field === 'dueDate') dueDate = val;
             else if (field === 'tags') tags = val;
           }
 
@@ -2431,6 +2470,7 @@
             priority: priority,
             status: status,
             dueDate: dueDate,
+            completionDate: completionDate,
             subtasks: [],
             timeSpent: 0,
             blockedBy: '',
@@ -2553,7 +2593,7 @@
       return;
     }
     const today = localDateStr(new Date());
-    let csv = 'Sr No,Task Name,Description,Priority,Status,Assign Date,Tags,Time Spent\n';
+    let csv = 'Sr No,Task Name,Description,Priority,Status,Assign Date,Completion Date,Tags,Time Spent\n';
 
     tasks.forEach(function (t, i) {
       const row = [
@@ -2563,6 +2603,7 @@
         '"' + (t.priority || '') + '"',
         '"' + (t.status || '') + '"',
         '"' + (t.dueDate || '') + '"',
+        '"' + (t.completionDate || '') + '"',
         '"' + (t.tags || []).join(', ') + '"',
         t.timeSpent || 0
       ];

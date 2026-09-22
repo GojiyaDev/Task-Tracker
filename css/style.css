@@ -362,6 +362,7 @@ h1, h2, h3, h4, h5, h6 { font-weight: 600; letter-spacing: -0.01em; color: var(-
 .task-list-header .col-status { width: 140px; flex: 0 0 140px; }
 .task-list-header .col-tags { width: 190px; flex: 0 0 190px; }
 .task-list-header .col-date { width: 120px; flex: 0 0 120px; text-align: right; }
+.task-list-header .col-completion-date { width: 130px; flex: 0 0 130px; text-align: right; }
 .task-list-header .col-actions { width: 64px; flex: 0 0 64px; text-align: right; }
 
 .task-row {
@@ -389,6 +390,7 @@ h1, h2, h3, h4, h5, h6 { font-weight: 600; letter-spacing: -0.01em; color: var(-
 .task-row .col-status { width: 140px; flex: 0 0 140px; }
 .task-row .col-tags { width: 190px; flex: 0 0 190px; }
 .task-row .col-date { width: 120px; flex: 0 0 120px; text-align: right; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-2); }
+.task-row .col-completion-date { width: 130px; flex: 0 0 130px; text-align: right; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-2); }
 .task-row .col-actions { width: 64px; flex: 0 0 64px; display: flex; justify-content: flex-end; }
 
 @media (max-width: 1199.98px) {
@@ -396,6 +398,7 @@ h1, h2, h3, h4, h5, h6 { font-weight: 600; letter-spacing: -0.01em; color: var(-
 }
 @media (max-width: 575.98px) {
   .task-list-header .col-date, .task-row .col-date { display: none !important; }
+  .task-list-header .col-completion-date, .task-row .col-completion-date { display: none !important; }
 }
 
 .task-title {
